@@ -1,0 +1,17 @@
+project:
+  name: AI-Video
+  version: 0.1
+
+video:
+  input: videos
+  output: output
+
+detector:
+  model: yolov8n-face.pt
+  confidence: 0.4
+
+tracking:
+  enabled: true
+
+blur:
+  kernel_size: 55
