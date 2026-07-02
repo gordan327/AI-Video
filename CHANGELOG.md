@@ -21,3 +21,12 @@ All notable changes to this project will be documented in this file.
 
 This is the initial project structure of AI-Video.
 The project is currently in the planning and infrastructure stage.
+
+## v0.3.0
+
+### Added
+
+- 新增 VideoReader
+- 支援讀取影片資訊
+- 支援逐格讀取 Frame
+- 完成第一個影片測試
