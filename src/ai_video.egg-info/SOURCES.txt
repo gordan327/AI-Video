@@ -1,0 +1,11 @@
+LICENSE
+README.md
+pyproject.toml
+src/ai_video/__init__.py
+src/ai_video/config_manager.py
+src/ai_video/processor.py
+src/ai_video.egg-info/PKG-INFO
+src/ai_video.egg-info/SOURCES.txt
+src/ai_video.egg-info/dependency_links.txt
+src/ai_video.egg-info/requires.txt
+src/ai_video.egg-info/top_level.txt

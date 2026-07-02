@@ -31,3 +31,19 @@
 - 建立 Roadmap
 - 完成第一次 Git Commit
 - 開始開發 Video Reader
+
+🎉 第一個 Git Commit 完成。
+
+Commit Message：
+
+Initialize project structure
+
+## 設計決策
+
+本專案採用 Processor 架構。
+
+main.py 不直接實作任何影片處理流程，而是負責啟動程式及載入設定。
+
+所有影片處理流程統一由 processor.py 協調，再依序呼叫各功能模組。
+
+這樣的設計可以降低 main.py 的複雜度，也方便未來增加 GUI、命令列、API 等不同的操作介面，而不必修改核心處理流程。
