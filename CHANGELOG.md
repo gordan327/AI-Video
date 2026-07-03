@@ -30,3 +30,10 @@ The project is currently in the planning and infrastructure stage.
 - 支援讀取影片資訊
 - 支援逐格讀取 Frame
 - 完成第一個影片測試
+
+## v0.4.0
+
+### Added
+
+- 新增 VideoProcessor
+- 打通 PipeLine

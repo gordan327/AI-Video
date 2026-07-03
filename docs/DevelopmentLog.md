@@ -48,7 +48,7 @@ main.py 不直接實作任何影片處理流程，而是負責啟動程式及載
 
 這樣的設計可以降低 main.py 的複雜度，也方便未來增加 GUI、命令列、API 等不同的操作介面，而不必修改核心處理流程。
 
-## 2026-06-19
+## 2026-07-03
 
 ### Milestone 0.3：VideoReader 完成
 
@@ -64,3 +64,14 @@ main.py 不直接實作任何影片處理流程，而是負責啟動程式及載
 - 關閉影片
 
 使用 main.py 成功測試 MP4 影片。
+
+## 2026-07-03
+
+### Milestone 0.4：Video Processing Pipeline 完成。
+
+完成  類別VideoProcessor:
+
+- 確認 Pipeline 已經打通
+
+再次使用 main.py 成功測試 MP4 影片。
+
