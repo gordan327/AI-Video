@@ -75,3 +75,22 @@ main.py 不直接實作任何影片處理流程，而是負責啟動程式及載
 
 再次使用 main.py 成功測試 MP4 影片。
 
+## 2026-07-03
+
+### Milestone 0.5：VideoWriter 完成。
+
+建立video_writer.py並修改processor.py:
+
+- 確認 Pipeline 打通且產生output.mp4
+
+再次使用 main.py 成功產生 output.mp4 影片，但沒有聲音。
+
+## 2026-07-04
+
+### Milestone 0.5.5：FFmpeg Audio Merge 完成。
+
+將影像與聲音整合在一起;
+
+- 增加一個temp_video.mp4
+
+main.py 成功產生 有聲音的 output.mp4 影片。

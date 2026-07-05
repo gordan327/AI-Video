@@ -37,3 +37,16 @@ The project is currently in the planning and infrastructure stage.
 
 - 新增 VideoProcessor
 - 打通 PipeLine
+
+## v0.5.0
+### Added
+
+- 建立video_writer
+- 產生新的影像檔（無聲）
+
+## v0.5.5
+### Added
+
+- 加入FFmpeg Audio Merge
+- 產生中間檔，並生成有生的影像檔
+
