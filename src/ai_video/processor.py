@@ -3,30 +3,45 @@ import cv2
 from ai_video.video_reader import VideoReader
 from ai_video.video_writer import VideoWriter
 from ai_video.ffmpeg_processor import FFmpegProcessor
-from ai_video.logger import Logger
-from ai_video.dummy_face_detector import DummyFaceDetector
 
+from ai_video.scrfd_face_detector import SCRFDFaceDetector
+from ai_video.bytetrack_face_tracker import ByteTrackFaceTracker
+from ai_video.face_renderer import FaceRenderer
+
+from ai_video.model_manager import ModelManager
 
 class VideoProcessor:
     """影片處理流程控制器"""
 
-    def __init__(self, video_path: str):
+    def __init__(self, config):
 
-        self.video_path = video_path
+        self.config = config
+
+        self.reader = VideoReader(
+            self.config.get("video.input")
+        )
+
+        self.writer = None
+
+        self.model_manager = ModelManager(self.config)
+
+        self.detector = SCRFDFaceDetector(
+            self.model_manager,
+            self.config,
+        )
+
+        self.tracker = ByteTrackFaceTracker()
+
+        self.renderer = FaceRenderer()
 
         self.ffmpeg = FFmpegProcessor()
-
-        self.reader = VideoReader(video_path)
-
-        # 建立 Dummy Face Detector
-        self.detector = DummyFaceDetector()
 
     def run(self):
 
         self.reader.open()
 
         self.writer = VideoWriter(
-            output_path="output/temp_video.mp4",
+            output_path=self.config.get("video.temp_output"),
             fps=self.reader.fps,
             width=self.reader.width,
             height=self.reader.height,
@@ -34,7 +49,7 @@ class VideoProcessor:
 
         self.writer.open()
 
-        Logger.info("開始處理影片...")
+        print("開始處理影片...")
 
         frame_index = 0
 
@@ -52,31 +67,25 @@ class VideoProcessor:
             frame_index += 1
 
         self.reader.close()
+
         self.writer.close()
 
-        Logger.info("正在合併音訊...")
+        print("正在合併音訊...")
 
         self.ffmpeg.merge_audio(
-            original_video=self.video_path,
-            processed_video="output/temp_video.mp4",
-            output_video="output/output.mp4",
+            original_video=self.config.get("video.input"),
+            processed_video=self.config.get("video.temp_output"),
+            output_video=self.config.get("video.output"),
         )
 
-        Logger.success("音訊合併完成。")
-        Logger.success(f"完成，共處理 {frame_index} 個 Frame。")
+        print(f"完成，共處理 {frame_index} 個 Frame。")
 
     def process_frame(self, frame):
 
         faces = self.detector.detect(frame)
 
-        for face in faces:
+        faces = self.tracker.track(faces)
 
-            cv2.rectangle(
-                frame,
-                (face.x1, face.y1),
-                (face.x2, face.y2),
-                (0, 255, 0),
-                3,
-            )
+        frame = self.renderer.draw(frame, faces)
 
         return frame

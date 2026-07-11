@@ -94,3 +94,35 @@ main.py 不直接實作任何影片處理流程，而是負責啟動程式及載
 - 增加一個temp_video.mp4
 
 main.py 成功產生 有聲音的 output.mp4 影片。
+
+Milestone 1
+Project Setup
+
+✓
+
+Milestone 2
+Video Reader
+
+✓
+
+Milestone 3
+Video Writer
+
+✓
+
+...
+
+Milestone 12
+ByteTrack Framework
+
+✓
+
+Milestone 13
+IoU Tracker
+
+✓
+
+Milestone 14
+Kalman Filter
+
+In Progress

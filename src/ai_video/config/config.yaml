@@ -1,14 +1,9 @@
-project:
-  name: AI-Video
-  version: 0.2
-
 video:
   input: videos/demo.mp4
   output: output/output.mp4
   temp_output: output/temp_video.mp4
 
 detector:
-  type: scrfd
   model: buffalo_sc
   det_size: 640
   confidence: 0.5
@@ -16,20 +11,13 @@ detector:
 tracker:
   type: dummy
 
-tracking:
-  enabled: true
-
-  iou_threshold: 0.20
-
-  max_missed: 30
-
 renderer:
   show_confidence: true
   show_track_id: true
   box_thickness: 2
 
 runtime:
-  provider: CoreMLExecutionProvider
+  provider: auto
 
 logging:
   level: INFO

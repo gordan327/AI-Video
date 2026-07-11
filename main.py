@@ -1,9 +1,12 @@
 from ai_video.processor import VideoProcessor
+from ai_video.config_manager import ConfigManager
 
 
 def main():
 
-    processor = VideoProcessor("videos/demo.mp4")
+    config = ConfigManager()
+
+    processor = VideoProcessor(config)
 
     processor.run()
 
