@@ -1,3 +1,5 @@
+import traceback
+
 from threading import Event
 
 from PySide6.QtCore import QObject, Signal, Slot
@@ -42,10 +44,12 @@ class Worker(QObject):
             else:
                 self.cancelled.emit()
 
-        except Exception as error:
-            self.failed.emit(
-                f"{type(error).__name__}: {error}"
-            )
+        except Exception:
+            error_message = traceback.format_exc()
+
+            print(error_message)
+
+            self.failed.emit(error_message)
 
     def request_stop(self):
         """通知影片處理器停止工作。"""

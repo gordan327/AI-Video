@@ -30,6 +30,9 @@ class ModelManager:
                 "CPUExecutionProvider",
             )
 
+            if not provider or provider == "auto":
+                provider = "CPUExecutionProvider"
+
             self._face_analysis = FaceAnalysis(
                 name=model_name,
                 root=str(Path("models/downloads")),

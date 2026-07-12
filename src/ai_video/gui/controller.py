@@ -1,26 +1,16 @@
 from pathlib import Path
 
-from PySide6.QtCore import QThread
+import yaml
+
+from PySide6.QtCore import QObject, QThread, Slot
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
+from ai_video.config_manager import ConfigManager
 from ai_video.gui.worker import Worker
 
 
-class GuiConfig:
-    """
-    提供 VideoProcessor 所需的簡易設定介面。
 
-    介面與原本 ConfigManager 的 get() 方法相容。
-    """
-
-    def __init__(self, values):
-        self.values = values
-
-    def get(self, key, default=None):
-        return self.values.get(key, default)
-
-
-class Controller:
+class Controller(QObject):
     """處理 GUI 操作與影片處理流程。"""
 
     VIDEO_FILTER = (
@@ -30,6 +20,8 @@ class Controller:
     )
 
     def __init__(self, window):
+        super().__init__(window)
+
         self.window = window
 
         self.thread = None
@@ -180,16 +172,21 @@ class Controller:
             f"{output_path.stem}_video_only.mp4"
         )
 
-        config = GuiConfig(
-            {
-                "video.input": str(input_path),
-                "video.temp_output": str(temp_output),
-                "video.output": str(output_path),
+        config = ConfigManager()
 
-                # SCRFD 模型會繼續從原有設定取得其他參數。
-                # 若 ModelManager 需要更多設定，下一步再整合
-                # 原本的 config.yaml。
-            }
+        config.set(
+            "video.input",
+            str(input_path)
+        )
+
+        config.set(
+            "video.temp_output",
+            str(temp_output)
+        )
+
+        config.set(
+            "video.output",
+            str(output_path)
         )
 
         self.start_worker(config)
@@ -260,6 +257,7 @@ class Controller:
 
         self.worker.request_stop()
 
+    @Slot(str)
     def processing_finished(self, output_path):
         """影片處理完成。"""
 
@@ -272,6 +270,7 @@ class Controller:
             f"影片已輸出至：\n{output_path}",
         )
 
+    @Slot()
     def processing_cancelled(self):
         """影片處理被使用者中止。"""
 
@@ -284,6 +283,7 @@ class Controller:
             "影片處理工作已停止，暫存檔案已清除。",
         )
 
+    @Slot(str)
     def processing_failed(self, message):
         """影片處理發生錯誤。"""
 
@@ -296,6 +296,7 @@ class Controller:
             message,
         )
 
+    @Slot()
     def cleanup_worker(self):
         """背景執行緒結束後清理物件。"""
 
