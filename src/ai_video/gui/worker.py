@@ -1,5 +1,7 @@
 import traceback
 
+from ai_video.logger import Logger
+
 from threading import Event
 
 from PySide6.QtCore import QObject, Signal, Slot
@@ -16,6 +18,7 @@ class Worker(QObject):
 
     progress = Signal(int)
     status_changed = Signal(str)
+    stats_changed = Signal(object)
 
     def __init__(self, config):
         super().__init__()
@@ -27,17 +30,21 @@ class Worker(QObject):
     def run(self):
         """執行影片處理流程。"""
 
+        Logger.info("背景影片處理工作已啟動")
+
         try:
             processor = VideoProcessor(
                 config=self.config,
                 progress_callback=self.progress.emit,
                 status_callback=self.status_changed.emit,
+                stats_callback=self.stats_changed.emit,
                 stop_checker=self.stop_event.is_set,
             )
 
             completed = processor.run()
 
             if completed:
+                Logger.success("背景影片處理工作完成")
                 self.finished.emit(
                     self.config.get("video.output")
                 )
@@ -47,11 +54,12 @@ class Worker(QObject):
         except Exception:
             error_message = traceback.format_exc()
 
-            print(error_message)
+            Logger.error(error_message)
 
             self.failed.emit(error_message)
 
     def request_stop(self):
         """通知影片處理器停止工作。"""
+        Logger.warning("背景影片處理工作已停止")
 
         self.stop_event.set()

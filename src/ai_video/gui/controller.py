@@ -1,17 +1,18 @@
-from datetime import datetime
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QThread, Slot
+from PySide6.QtCore import QObject, QThread, Signal, Slot
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from ai_video.config_manager import ConfigManager
 from ai_video.gui.worker import Worker
-
+from ai_video.logger import Logger
 
 
 class Controller(QObject):
     """處理 GUI 操作與影片處理流程。"""
 
+    log_received = Signal(str)
+    
     VIDEO_FILTER = (
         "影片檔案 (*.mp4 *.mov *.avi *.mkv *.m4v);;"
         "MP4 影片 (*.mp4);;"
@@ -27,21 +28,41 @@ class Controller(QObject):
         self.worker = None
 
         self.connect_signals()
+        self.log_received.connect(
+            self.window.append_log
+        )
+
+        self._logger_listener = (
+            self.log_received.emit
+        )
+
+        Logger.subscribe(
+            self._logger_listener
+        )
+
+        Logger.info("AI-Video 已啟動")
 
     def add_log(
         self,
         message: str,
         level: str = "INFO",
     ):
-        """將訊息加入 GUI Log 視窗。"""
+        """透過統一 Logger 輸出訊息。"""
 
-        now = datetime.now().strftime("%H:%M:%S")
+        log_methods = {
+            "INFO": Logger.info,
+            "SUCCESS": Logger.success,
+            "WARNING": Logger.warning,
+            "ERROR": Logger.error,
+        }
 
-        log_message = f"[{now}] [{level}] {message}"
+        log_method = log_methods.get(
+            level.upper(),
+            Logger.info,
+        )
 
-        self.window.append_log(log_message)
+        log_method(message)
 
-        print(log_message)
 
     def connect_signals(self):
         """連接畫面元件與控制函式。"""
@@ -213,6 +234,8 @@ class Controller(QObject):
             str(output_path)
         )
 
+        self.window.log_edit.clear()
+
         self.add_log("-" * 50)
 
         self.add_log(
@@ -230,8 +253,6 @@ class Controller(QObject):
 
     def start_worker(self, config):
         """建立背景執行緒與 Worker。"""
-
-        self.window.log_edit.clear()
 
         self.thread = QThread()
         self.worker = Worker(config)

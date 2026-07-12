@@ -7,9 +7,11 @@ from ai_video.bytetrack_face_tracker import ByteTrackFaceTracker
 from ai_video.face_renderer import FaceRenderer
 from ai_video.ffmpeg_processor import FFmpegProcessor
 from ai_video.model_manager import ModelManager
+from ai_video.processing_stats import ProcessingStats
 from ai_video.scrfd_face_detector import SCRFDFaceDetector
 from ai_video.video_reader import VideoReader
 from ai_video.video_writer import VideoWriter
+from ai_video.logger import Logger
 
 
 class VideoProcessor:
@@ -20,12 +22,14 @@ class VideoProcessor:
         config,
         progress_callback=None,
         status_callback=None,
+        stats_callback=None,
         stop_checker=None,
     ):
         self.config = config
 
         self.progress_callback = progress_callback
         self.status_callback = status_callback
+        self.stats_callback = stats_callback
         self.stop_checker = stop_checker
 
         self.reader = VideoReader(
@@ -63,6 +67,12 @@ class VideoProcessor:
 
         if self.status_callback is not None:
             self.status_callback(message)
+
+    def report_stats(self, stats: ProcessingStats):
+        """將即時處理統計資料回報給呼叫端。"""
+
+        if self.stats_callback is not None:
+            self.stats_callback(stats)
 
     def stop_requested(self) -> bool:
         """檢查使用者是否要求停止。"""
@@ -119,7 +129,7 @@ class VideoProcessor:
 
         total_frames = self.get_total_frames()
 
-        print("開始處理影片...")
+        Logger.info("開始處理影片")
 
         self.report_status(
             "正在偵測及模糊影片中的人臉……"
@@ -188,9 +198,32 @@ class VideoProcessor:
                         * 100
                     )
 
-                    self.report_progress(
-                        min(percentage, 99)
+                    remaining_frames = max(
+                        0,
+                        total_frames - frame_index,
                     )
+
+                    eta_seconds = (
+                        remaining_frames / current_fps
+                        if current_fps > 0
+                        else 0.0
+                    )
+
+                    stats = ProcessingStats(
+                        progress=min(percentage, 99),
+                        frame_index=frame_index,
+                        total_frames=total_frames,
+                        fps=current_fps,
+                        faces=len(self.current_faces),
+                        elapsed_seconds=elapsed_time,
+                        eta_seconds=eta_seconds,
+                    )
+
+                    self.report_progress(
+                        stats.progress
+                    )
+
+                    self.report_stats(stats)
 
                     self.report_status(
                         f"正在處理第 "
@@ -200,6 +233,18 @@ class VideoProcessor:
                     )
 
                 else:
+                    stats = ProcessingStats(
+                        progress=0,
+                        frame_index=frame_index,
+                        total_frames=0,
+                        fps=current_fps,
+                        faces=len(self.current_faces),
+                        elapsed_seconds=elapsed_time,
+                        eta_seconds=0.0,
+                    )
+
+                    self.report_stats(stats)
+
                     self.report_status(
                         f"已處理 {frame_index:,} 個影格，"
                         f"速度 {current_fps:.2f} FPS"
@@ -233,7 +278,7 @@ class VideoProcessor:
             "影像處理完成，正在合併原始音訊……"
         )
 
-        print("正在合併音訊...")
+        Logger.info("正在合併音訊")
 
         self.ffmpeg.merge_audio(
             original_video=self.config.get(
@@ -252,7 +297,7 @@ class VideoProcessor:
         self.report_progress(100)
         self.report_status("影片處理完成")
 
-        print(
+        Logger.success(
             f"完成，共處理 "
             f"{frame_index} 個 Frame。"
         )

@@ -133,7 +133,7 @@ class MainWindow(QMainWindow):
 
         layout.addLayout(renderer_row)
 
-                # 執行紀錄
+        # 執行紀錄
         log_label = QLabel("執行紀錄")
         log_label.setStyleSheet(
             """
@@ -164,8 +164,40 @@ class MainWindow(QMainWindow):
 
         layout.addWidget(self.progress)
 
+        # 即時處理資訊
+        stats_row = QHBoxLayout()
+
+        frame_title = QLabel("影格")
+        frame_title.setStyleSheet(
+            "font-weight: bold;"
+        )
+
+        self.frame_value_label = QLabel("0 / 0")
+        self.frame_value_label.setMinimumWidth(140)
+
+        fps_title = QLabel("處理速度")
+        fps_title.setStyleSheet(
+            "font-weight: bold;"
+        )
+
+        self.fps_value_label = QLabel("0.00 FPS")
+        self.fps_value_label.setMinimumWidth(120)
+
+        stats_row.addWidget(frame_title)
+        stats_row.addWidget(self.frame_value_label)
+
+        stats_row.addSpacing(30)
+
+        stats_row.addWidget(fps_title)
+        stats_row.addWidget(self.fps_value_label)
+
+        stats_row.addStretch()
+
+        layout.addLayout(stats_row)
+
         # 操作按鈕
         button_row = QHBoxLayout()
+
         button_row.addStretch()
 
         self.start_button = QPushButton("開始處理")
@@ -187,3 +219,21 @@ class MainWindow(QMainWindow):
 
         scrollbar = self.log_edit.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
+
+    def update_processing_stats(self, stats):
+        """更新影片處理即時資訊。"""
+
+        self.frame_value_label.setText(
+            f"{stats.frame_index:,} / "
+            f"{stats.total_frames:,}"
+        )
+
+        self.fps_value_label.setText(
+            f"{stats.fps:.2f} FPS"
+        )
+
+    def reset_processing_stats(self):
+        """清除上一支影片的處理資訊。"""
+
+        self.frame_value_label.setText("0 / 0")
+        self.fps_value_label.setText("0.00 FPS")
