@@ -1,27 +1,27 @@
-from ai_video.assignment import GreedyAssignment
+from ai_video.assignment import HungarianAssignment
 from ai_video.cost_matrix import CostMatrix
 
 
 class Matcher:
-    """負責協調成本矩陣與配對演算法。"""
+    """協調成本矩陣與配對演算法。"""
 
     def __init__(
         self,
-        minimum_score: float = 0.20,
+        minimum_score: float = 0.45,
     ):
         self.minimum_score = minimum_score
 
         self.cost_matrix = CostMatrix()
-        self.assignment = GreedyAssignment()
+        self.assignment = HungarianAssignment()
 
     def match(self, tracks, faces):
         """
         配對 Track 與 Face。
 
         回傳：
-            matched_pairs: list[tuple[Track, Face]]
-            unmatched_tracks: list[Track]
-            unmatched_faces: list[Face]
+            matched_pairs
+            unmatched_tracks
+            unmatched_faces
         """
 
         if not tracks:
@@ -52,7 +52,6 @@ class Matcher:
         matched_face_indexes = set()
 
         for track_index, face_index in assigned_pairs:
-
             score = score_matrix[track_index][face_index]
 
             if score < self.minimum_score:

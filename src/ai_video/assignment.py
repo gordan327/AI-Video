@@ -1,42 +1,42 @@
-class GreedyAssignment:
-    """Greedy Assignment"""
+import numpy as np
+from scipy.optimize import linear_sum_assignment
+
+
+class HungarianAssignment:
+    """使用 Hungarian Algorithm 尋找整體最佳配對。"""
 
     def assign(
         self,
-        matrix,
-    ):
+        score_matrix: list[list[float]],
+    ) -> list[tuple[int, int]]:
+        """
+        回傳配對索引：
 
-        pairs = []
+        [(track_index, face_index), ...]
+        """
 
-        used_rows = set()
-        used_cols = set()
+        if not score_matrix:
+            return []
 
-        while True:
+        if not score_matrix[0]:
+            return []
 
-            best_score = -1
-            best_pair = None
+        scores = np.asarray(
+            score_matrix,
+            dtype=np.float32,
+        )
 
-            for r, row in enumerate(matrix):
+        # linear_sum_assignment 尋找最低成本，
+        # 因此把分數轉換成成本。
+        cost_matrix = 1.0 - scores
 
-                if r in used_rows:
-                    continue
+        track_indexes, face_indexes = linear_sum_assignment(
+            cost_matrix
+        )
 
-                for c, score in enumerate(row):
-
-                    if c in used_cols:
-                        continue
-
-                    if score > best_score:
-
-                        best_score = score
-                        best_pair = (r, c)
-
-            if best_pair is None:
-                break
-
-            used_rows.add(best_pair[0])
-            used_cols.add(best_pair[1])
-
-            pairs.append(best_pair)
-
-        return pairs
+        return list(
+            zip(
+                track_indexes.tolist(),
+                face_indexes.tolist(),
+            )
+        )

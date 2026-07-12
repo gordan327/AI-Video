@@ -2,32 +2,33 @@ from ai_video.face import Face
 
 
 class SCRFDFaceDetector:
-    """使用 SCRFD 偵測人臉"""
+    """使用 SCRFD 偵測人臉並取得 embedding。"""
 
     def __init__(self, model_manager, config):
-
         self.model_manager = model_manager
         self.config = config
 
         self.app = self.model_manager.face_analysis
 
-    def detect(self, frame):
+    def detect(self, frame) -> list[Face]:
+        """偵測影格中的人臉。"""
 
         results = self.app.get(frame)
 
-        faces = []
+        faces: list[Face] = []
 
         confidence_threshold = self.config.get(
             "detector.confidence",
             0.5,
         )
 
-        for face in results:
-
-            if face.det_score < confidence_threshold:
+        for result in results:
+            if result.det_score < confidence_threshold:
                 continue
 
-            x1, y1, x2, y2 = map(int, face.bbox)
+            x1, y1, x2, y2 = map(int, result.bbox)
+
+            embedding = result.normed_embedding
 
             faces.append(
                 Face(
@@ -35,7 +36,8 @@ class SCRFDFaceDetector:
                     y1=y1,
                     x2=x2,
                     y2=y2,
-                    confidence=float(face.det_score),
+                    confidence=float(result.det_score),
+                    embedding=embedding,
                 )
             )
 

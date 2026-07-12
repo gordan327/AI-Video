@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+import numpy as np
+
 
 @dataclass
 class Face:
@@ -13,3 +15,6 @@ class Face:
     confidence: float
 
     track_id: int | None = None
+
+    # InsightFace embedding
+    embedding: np.ndarray | None = None
