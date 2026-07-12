@@ -267,6 +267,10 @@ class Controller(QObject):
             self.window.progress.setValue
         )
 
+        self.worker.stats_changed.connect(
+            self.window.update_processing_stats
+        )
+
         self.worker.status_changed.connect(
             self.window.status_label.setText
         )
@@ -305,6 +309,7 @@ class Controller(QObject):
 
         self.set_processing_state(True)
 
+        self.window.reset_processing_stats()
         self.window.progress.setValue(0)
         self.window.status_label.setText("正在準備影片處理……")
 

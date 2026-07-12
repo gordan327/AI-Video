@@ -186,10 +186,36 @@ class MainWindow(QMainWindow):
         stats_row.addWidget(frame_title)
         stats_row.addWidget(self.frame_value_label)
 
-        stats_row.addSpacing(30)
+        stats_row.addSpacing(24)
 
         stats_row.addWidget(fps_title)
         stats_row.addWidget(self.fps_value_label)
+
+        stats_row.addSpacing(24)
+
+        faces_title = QLabel("人臉")
+        faces_title.setStyleSheet(
+            "font-weight: bold;"
+        )
+
+        self.faces_value_label = QLabel("0")
+        self.faces_value_label.setMinimumWidth(50)
+
+        stats_row.addWidget(faces_title)
+        stats_row.addWidget(self.faces_value_label)
+
+        stats_row.addSpacing(24)
+
+        eta_title = QLabel("剩餘時間")
+        eta_title.setStyleSheet(
+            "font-weight: bold;"
+        )
+
+        self.eta_value_label = QLabel("--:--:--")
+        self.eta_value_label.setMinimumWidth(90)
+
+        stats_row.addWidget(eta_title)
+        stats_row.addWidget(self.eta_value_label)
 
         stats_row.addStretch()
 
@@ -232,8 +258,43 @@ class MainWindow(QMainWindow):
             f"{stats.fps:.2f} FPS"
         )
 
+        self.faces_value_label.setText(
+            str(stats.faces)
+        )
+
+        self.eta_value_label.setText(
+            self.format_duration(stats.eta_seconds)
+        )
+
+    @staticmethod
+    def format_duration(seconds: float) -> str:
+        """將秒數格式化為 HH:MM:SS。"""
+
+        total_seconds = max(
+            0,
+            int(seconds),
+        )
+
+        hours, remainder = divmod(
+            total_seconds,
+            3600,
+        )
+
+        minutes, seconds = divmod(
+            remainder,
+            60,
+        )
+
+        return (
+            f"{hours:02d}:"
+            f"{minutes:02d}:"
+            f"{seconds:02d}"
+        )
+
     def reset_processing_stats(self):
         """清除上一支影片的處理資訊。"""
 
         self.frame_value_label.setText("0 / 0")
         self.fps_value_label.setText("0.00 FPS")
+        self.faces_value_label.setText("0")
+        self.eta_value_label.setText("--:--:--")
