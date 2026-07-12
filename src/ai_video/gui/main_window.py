@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QProgressBar,
     QPushButton,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -17,8 +18,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("AI-Video 0.4 Alpha")
-        self.resize(900, 500)
+        self.setWindowTitle("AI-Video 0.5 Alpha")
+        self.resize(900, 680)
 
         self.setup_ui()
 
@@ -132,6 +133,24 @@ class MainWindow(QMainWindow):
 
         layout.addLayout(renderer_row)
 
+                # 執行紀錄
+        log_label = QLabel("執行紀錄")
+        log_label.setStyleSheet(
+            """
+            font-weight: bold;
+            """
+        )
+        layout.addWidget(log_label)
+
+        self.log_edit = QTextEdit()
+        self.log_edit.setReadOnly(True)
+        self.log_edit.setPlaceholderText(
+            "影片處理訊息會顯示在這裡"
+        )
+        self.log_edit.setMinimumHeight(140)
+
+        layout.addWidget(self.log_edit)
+
         layout.addStretch()
 
         # 狀態
@@ -160,3 +179,11 @@ class MainWindow(QMainWindow):
         button_row.addWidget(self.stop_button)
 
         layout.addLayout(button_row)
+
+    def append_log(self, message: str):
+        """在 GUI Log 視窗加入訊息。"""
+
+        self.log_edit.append(message)
+
+        scrollbar = self.log_edit.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
