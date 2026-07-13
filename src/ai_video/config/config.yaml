@@ -2,22 +2,35 @@ video:
   input: videos/demo.mp4
   output: output/output.mp4
   temp_output: output/temp_video.mp4
-
 detector:
   model: buffalo_sc
   det_size: 640
-  confidence: 0.5
+  confidence: 0.40
 
 tracker:
-  type: dummy
+  type: bytetrack
+
+  privacy_hold_frames: 15
+
+  prediction_frames: 3
+
+  freeze_expansion_per_frame: 0.03
+
+  freeze_max_expansion: 0.60
 
 renderer:
-  show_confidence: true
-  show_track_id: true
+  type: pixelate
+  blur_strength: 51
+  pixel_size: 12
+  padding_ratio: 0.35
+  temporal_hold_frames: 5
+  show_confidence: false
+  show_track_id: false
   box_thickness: 2
 
 runtime:
   provider: auto
-
 logging:
   level: INFO
+ui:
+  language: zh_TW

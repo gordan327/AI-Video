@@ -45,8 +45,44 @@ class VideoProcessor:
             self.config,
         )
 
-        self.tracker = ByteTrackFaceTracker()
-        self.renderer = FaceRenderer()
+        self.tracker = ByteTrackFaceTracker(
+            privacy_hold_frames=self.config.get(
+                "tracker.privacy_hold_frames",
+                15,
+            ),
+            prediction_frames=self.config.get(
+                "tracker.prediction_frames",
+                3,
+            ),
+            freeze_expansion_per_frame=self.config.get(
+                "tracker.freeze_expansion_per_frame",
+                0.03,
+            ),
+        )
+
+        self.renderer = FaceRenderer(
+            renderer_type=self.config.get(
+                "renderer.type",
+                "blur",
+            ),
+            blur_strength=self.config.get(
+                "renderer.blur_strength",
+                51,
+            ),
+            pixel_size=self.config.get(
+                "renderer.pixel_size",
+                12,
+            ),            
+            padding_ratio=self.config.get(
+                "renderer.padding_ratio",
+                0.35,
+            ),
+            temporal_hold_frames=self.config.get(
+                "renderer.temporal_hold_frames",
+                5,
+            ),
+        )
+        
         self.ffmpeg = FFmpegProcessor()
 
         self.detector_time = 0.0

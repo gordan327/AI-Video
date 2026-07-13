@@ -1,3 +1,7 @@
+from pathlib import Path
+
+from PySide6.QtCore import Signal
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -15,13 +19,27 @@ from PySide6.QtWidgets import (
 class MainWindow(QMainWindow):
     """AI-Video 主視窗。"""
 
+    video_dropped = Signal(str)
+    open_video_requested = Signal()
+    preferences_requested = Signal()
+
+    SUPPORTED_VIDEO_SUFFIXES = {
+        ".mp4",
+        ".mov",
+        ".avi",
+        ".mkv",
+        ".m4v",
+    }
+
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("AI-Video 0.5 Alpha")
-        self.resize(900, 680)
+        self.setWindowTitle("AI-Video 0.6 Beta")
+        self.resize(900, 650)
+        self.setAcceptDrops(True)
 
         self.setup_ui()
+        self.setup_menu()
 
     def setup_ui(self):
         """建立主視窗介面。"""
@@ -33,7 +51,9 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(16)
 
-        title = QLabel("AI-Video 影片人臉模糊處理")
+        title = QLabel(
+            "AI-Video 影片隱私保護處理"
+        )
         title.setStyleSheet(
             """
             font-size: 22px;
@@ -49,7 +69,9 @@ class MainWindow(QMainWindow):
         input_label.setFixedWidth(80)
 
         self.input_edit = QLineEdit()
-        self.input_edit.setPlaceholderText("請選擇要處理的影片")
+        self.input_edit.setPlaceholderText(
+            "請選擇影片，或直接拖曳影片到視窗"
+        )
 
         self.input_button = QPushButton("瀏覽")
 
@@ -66,7 +88,9 @@ class MainWindow(QMainWindow):
         output_label.setFixedWidth(80)
 
         self.output_edit = QLineEdit()
-        self.output_edit.setPlaceholderText("請指定輸出影片的位置")
+        self.output_edit.setPlaceholderText(
+            "請指定輸出影片的位置"
+        )
 
         self.output_button = QPushButton("瀏覽")
 
@@ -76,91 +100,95 @@ class MainWindow(QMainWindow):
 
         layout.addLayout(output_row)
 
-        # 偵測器
-        detector_row = QHBoxLayout()
-
-        detector_label = QLabel("偵測器")
-        detector_label.setFixedWidth(80)
-
-        self.detector_combo = QComboBox()
-        self.detector_combo.addItems(
-            [
-                "SCRFD",
-            ]
-        )
-
-        detector_row.addWidget(detector_label)
-        detector_row.addWidget(self.detector_combo)
-        detector_row.addStretch()
-
-        layout.addLayout(detector_row)
-
-        # 追蹤器
-        tracker_row = QHBoxLayout()
-
-        tracker_label = QLabel("追蹤器")
-        tracker_label.setFixedWidth(80)
-
-        self.tracker_combo = QComboBox()
-        self.tracker_combo.addItems(
-            [
-                "AI-Tracker",
-            ]
-        )
-
-        tracker_row.addWidget(tracker_label)
-        tracker_row.addWidget(self.tracker_combo)
-        tracker_row.addStretch()
-
-        layout.addLayout(tracker_row)
-
-        # 影像處理方式
-        renderer_row = QHBoxLayout()
-
-        renderer_label = QLabel("處理方式")
-        renderer_label.setFixedWidth(80)
-
-        self.renderer_combo = QComboBox()
-        self.renderer_combo.addItems(
-            [
-                "Blur",
-            ]
-        )
-
-        renderer_row.addWidget(renderer_label)
-        renderer_row.addWidget(self.renderer_combo)
-        renderer_row.addStretch()
-
-        layout.addLayout(renderer_row)
-
-        # 執行紀錄
-        log_label = QLabel("執行紀錄")
-        log_label.setStyleSheet(
+        # 處理設定
+        settings_title = QLabel("處理設定")
+        settings_title.setStyleSheet(
             """
+            font-size: 16px;
             font-weight: bold;
             """
         )
-        layout.addWidget(log_label)
+        layout.addWidget(settings_title)
 
-        self.log_edit = QTextEdit()
-        self.log_edit.setReadOnly(True)
-        self.log_edit.setPlaceholderText(
-            "影片處理訊息會顯示在這裡"
+        settings_row = QHBoxLayout()
+
+        detector_label = QLabel("偵測器")
+        detector_label.setStyleSheet(
+            "font-weight: bold;"
         )
-        self.log_edit.setMinimumHeight(140)
 
-        layout.addWidget(self.log_edit)
+        self.detector_combo = QComboBox()
+        self.detector_combo.addItem(
+            "SCRFD（推薦）",
+            "scrfd",
+        )
+        self.detector_combo.setMinimumWidth(150)
 
-        layout.addStretch()
+        tracker_label = QLabel("追蹤器")
+        tracker_label.setStyleSheet(
+            "font-weight: bold;"
+        )
 
-        # 狀態
+        self.tracker_combo = QComboBox()
+        self.tracker_combo.addItem(
+            "AI 追蹤器",
+            "bytetrack",
+        )
+        self.tracker_combo.setMinimumWidth(150)
+
+        renderer_label = QLabel("處理方式")
+        renderer_label.setStyleSheet(
+            "font-weight: bold;"
+        )
+
+        self.renderer_combo = QComboBox()
+        self.renderer_combo.addItem(
+            "模糊",
+            "blur",
+        )
+        self.renderer_combo.addItem(
+            "馬賽克",
+            "pixelate",
+        )
+        self.renderer_combo.setMinimumWidth(120)
+
+        settings_row.addWidget(detector_label)
+        settings_row.addWidget(self.detector_combo)
+
+        settings_row.addSpacing(24)
+
+        settings_row.addWidget(tracker_label)
+        settings_row.addWidget(self.tracker_combo)
+
+        settings_row.addSpacing(24)
+
+        settings_row.addWidget(renderer_label)
+        settings_row.addWidget(self.renderer_combo)
+
+        settings_row.addStretch()
+
+        layout.addLayout(settings_row)
+
+        # 處理進度
+        progress_title = QLabel("處理進度")
+        progress_title.setStyleSheet(
+            """
+            font-size: 16px;
+            font-weight: bold;
+            """
+        )
+        layout.addWidget(progress_title)
+
         self.status_label = QLabel("準備就緒")
+        self.status_label.setStyleSheet(
+            "font-size: 14px;"
+        )
         layout.addWidget(self.status_label)
 
-        # 進度條
         self.progress = QProgressBar()
         self.progress.setRange(0, 100)
         self.progress.setValue(0)
+        self.progress.setTextVisible(True)
 
         layout.addWidget(self.progress)
 
@@ -183,6 +211,22 @@ class MainWindow(QMainWindow):
         self.fps_value_label = QLabel("0.00 FPS")
         self.fps_value_label.setMinimumWidth(120)
 
+        faces_title = QLabel("人臉")
+        faces_title.setStyleSheet(
+            "font-weight: bold;"
+        )
+
+        self.faces_value_label = QLabel("0")
+        self.faces_value_label.setMinimumWidth(50)
+
+        eta_title = QLabel("剩餘時間")
+        eta_title.setStyleSheet(
+            "font-weight: bold;"
+        )
+
+        self.eta_value_label = QLabel("--:--:--")
+        self.eta_value_label.setMinimumWidth(90)
+
         stats_row.addWidget(frame_title)
         stats_row.addWidget(self.frame_value_label)
 
@@ -193,26 +237,10 @@ class MainWindow(QMainWindow):
 
         stats_row.addSpacing(24)
 
-        faces_title = QLabel("人臉")
-        faces_title.setStyleSheet(
-            "font-weight: bold;"
-        )
-
-        self.faces_value_label = QLabel("0")
-        self.faces_value_label.setMinimumWidth(50)
-
         stats_row.addWidget(faces_title)
         stats_row.addWidget(self.faces_value_label)
 
         stats_row.addSpacing(24)
-
-        eta_title = QLabel("剩餘時間")
-        eta_title.setStyleSheet(
-            "font-weight: bold;"
-        )
-
-        self.eta_value_label = QLabel("--:--:--")
-        self.eta_value_label.setMinimumWidth(90)
 
         stats_row.addWidget(eta_title)
         stats_row.addWidget(self.eta_value_label)
@@ -221,9 +249,30 @@ class MainWindow(QMainWindow):
 
         layout.addLayout(stats_row)
 
+        # 執行紀錄
+        log_label = QLabel("執行紀錄")
+        log_label.setStyleSheet(
+            """
+            font-size: 16px;
+            font-weight: bold;
+            """
+        )
+        layout.addWidget(log_label)
+
+        self.log_edit = QTextEdit()
+        self.log_edit.setReadOnly(True)
+        self.log_edit.setPlaceholderText(
+            "影片處理訊息會顯示在這裡"
+        )
+        self.log_edit.setMinimumHeight(110)
+        self.log_edit.setMaximumHeight(160)
+
+        layout.addWidget(self.log_edit)
+
+        layout.addStretch()
+
         # 操作按鈕
         button_row = QHBoxLayout()
-
         button_row.addStretch()
 
         self.start_button = QPushButton("開始處理")
@@ -238,13 +287,53 @@ class MainWindow(QMainWindow):
 
         layout.addLayout(button_row)
 
+    def setup_menu(self):
+        """建立應用程式選單列。"""
+
+        file_menu = self.menuBar().addMenu("檔案")
+
+        open_action = QAction(
+            "開啟影片…",
+            self,
+        )
+        open_action.setShortcut("Ctrl+O")
+        open_action.triggered.connect(
+            self.open_video_requested.emit
+        )
+
+        preferences_action = QAction(
+            "偏好設定…",
+            self,
+        )
+        preferences_action.setShortcut("Ctrl+,")
+        preferences_action.triggered.connect(
+            self.preferences_requested.emit
+        )
+
+        quit_action = QAction(
+            "結束",
+            self,
+        )
+        quit_action.setShortcut("Ctrl+Q")
+        quit_action.triggered.connect(
+            self.close
+        )
+
+        file_menu.addAction(open_action)
+        file_menu.addSeparator()
+        file_menu.addAction(preferences_action)
+        file_menu.addSeparator()
+        file_menu.addAction(quit_action)
+
     def append_log(self, message: str):
-        """在 GUI Log 視窗加入訊息。"""
+        """在 GUI 執行紀錄中加入訊息。"""
 
         self.log_edit.append(message)
 
         scrollbar = self.log_edit.verticalScrollBar()
-        scrollbar.setValue(scrollbar.maximum())
+        scrollbar.setValue(
+            scrollbar.maximum()
+        )
 
     def update_processing_stats(self, stats):
         """更新影片處理即時資訊。"""
@@ -263,11 +352,23 @@ class MainWindow(QMainWindow):
         )
 
         self.eta_value_label.setText(
-            self.format_duration(stats.eta_seconds)
+            self.format_duration(
+                stats.eta_seconds
+            )
         )
 
+    def reset_processing_stats(self):
+        """清除上一支影片的處理資訊。"""
+
+        self.frame_value_label.setText("0 / 0")
+        self.fps_value_label.setText("0.00 FPS")
+        self.faces_value_label.setText("0")
+        self.eta_value_label.setText("--:--:--")
+
     @staticmethod
-    def format_duration(seconds: float) -> str:
+    def format_duration(
+        seconds: float,
+    ) -> str:
         """將秒數格式化為 HH:MM:SS。"""
 
         total_seconds = max(
@@ -291,10 +392,57 @@ class MainWindow(QMainWindow):
             f"{seconds:02d}"
         )
 
-    def reset_processing_stats(self):
-        """清除上一支影片的處理資訊。"""
+    def dragEnterEvent(self, event):
+        """判斷拖入的檔案是否為支援的影片。"""
 
-        self.frame_value_label.setText("0 / 0")
-        self.fps_value_label.setText("0.00 FPS")
-        self.faces_value_label.setText("0")
-        self.eta_value_label.setText("--:--:--")
+        mime_data = event.mimeData()
+
+        if not mime_data.hasUrls():
+            event.ignore()
+            return
+
+        urls = mime_data.urls()
+
+        if not urls:
+            event.ignore()
+            return
+
+        path = Path(
+            urls[0].toLocalFile()
+        )
+
+        if (
+            path.is_file()
+            and path.suffix.lower()
+            in self.SUPPORTED_VIDEO_SUFFIXES
+        ):
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        """處理放入視窗的影片檔案。"""
+
+        urls = event.mimeData().urls()
+
+        if not urls:
+            event.ignore()
+            return
+
+        path = Path(
+            urls[0].toLocalFile()
+        )
+
+        if (
+            not path.is_file()
+            or path.suffix.lower()
+            not in self.SUPPORTED_VIDEO_SUFFIXES
+        ):
+            event.ignore()
+            return
+
+        self.video_dropped.emit(
+            str(path)
+        )
+
+        event.acceptProposedAction()

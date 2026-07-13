@@ -5,6 +5,9 @@ from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from ai_video.config_manager import ConfigManager
 from ai_video.gui.worker import Worker
+
+from ai_video.gui.preferences_dialog import PreferencesDialog
+
 from ai_video.logger import Logger
 
 
@@ -26,6 +29,7 @@ class Controller(QObject):
 
         self.thread = None
         self.worker = None
+        self.config = ConfigManager()
 
         self.connect_signals()
         self.log_received.connect(
@@ -83,6 +87,70 @@ class Controller(QObject):
             self.stop_processing
         )
 
+        self.window.video_dropped.connect(
+            self.handle_video_dropped
+        )
+
+        self.window.open_video_requested.connect(
+            self.select_input_video
+        )
+
+        self.window.open_video_requested.connect(
+            self.select_input_video
+        )
+
+        self.window.preferences_requested.connect(
+            self.show_preferences
+        )
+
+    def set_input_video(self, filename: str):
+        """設定輸入影片及預設輸出路徑。"""
+
+        input_path = Path(filename)
+
+        self.window.input_edit.setText(
+            str(input_path)
+        )
+
+        output_path = input_path.with_name(
+            f"{input_path.stem}_blurred.mp4"
+        )
+
+        self.window.output_edit.setText(
+            str(output_path)
+        )
+
+        self.window.status_label.setText(
+            "已選擇輸入影片"
+        )
+
+        self.add_log(
+            f"已選擇輸入影片：{input_path}"
+        )
+
+        self.add_log(
+            f"預設輸出影片：{output_path}"
+        )
+
+    @Slot(str)
+    def handle_video_dropped(self, filename: str):
+        """接收拖放進視窗的影片。"""
+
+        if self.thread is not None:
+            QMessageBox.information(
+                self.window,
+                "影片正在處理",
+                "請等待目前的影片處理完成後，"
+                "再拖入另一支影片。",
+            )
+            return
+
+        self.set_input_video(filename)
+
+        self.add_log(
+            "影片已透過拖放方式加入"
+        )
+
     def select_input_video(self):
         """選擇輸入影片。"""
 
@@ -96,23 +164,7 @@ class Controller(QObject):
         if not filename:
             return
 
-        input_path = Path(filename)
-
-        self.window.input_edit.setText(str(input_path))
-
-        output_path = input_path.with_name(
-            f"{input_path.stem}_blurred.mp4"
-        )
-
-        self.window.output_edit.setText(str(output_path))
-        self.window.status_label.setText("已選擇輸入影片")
-        self.add_log(
-            f"已選擇輸入影片：{input_path}"
-        )
-
-        self.add_log(
-            f"預設輸出影片：{output_path}"
-        )
+        self.set_input_video(filename)
 
     def select_output_video(self):
         """指定輸出影片的位置。"""
@@ -140,6 +192,61 @@ class Controller(QObject):
             f"已指定輸出影片：{output_path}"
         )
 
+    def show_preferences(self):
+        """顯示並更新偏好設定。"""
+
+        dialog = PreferencesDialog(self.window)
+
+        dialog.set_values(
+            {
+                "detector.model": self.config.get(
+                    "detector.model",
+                    "buffalo_sc",
+                ),
+                "detector.det_size": self.config.get(
+                    "detector.det_size",
+                    640,
+                ),
+                "detector.confidence": self.config.get(
+                    "detector.confidence",
+                    0.50,
+                ),
+                "runtime.provider": self.config.get(
+                    "runtime.provider",
+                    "auto",
+                ),
+            }
+        )
+
+        if not dialog.exec():
+            return
+
+        values = dialog.get_values()
+
+        try:
+            for key, value in values.items():
+                self.config.set(key, value)
+
+            self.config.save()
+
+        except OSError as error:
+            QMessageBox.critical(
+                self.window,
+                "儲存偏好設定失敗",
+                f"無法寫入設定檔：\n{error}",
+            )
+
+            self.add_log(
+                f"偏好設定儲存失敗：{error}",
+                "ERROR",
+            )
+            return
+
+        self.add_log(
+            "偏好設定已儲存",
+            "SUCCESS",
+        )
+        
     def start_processing(self):
         """檢查設定並啟動背景影片處理。"""
 
@@ -203,9 +310,11 @@ class Controller(QObject):
             )
             return
 
-        detector = self.window.detector_combo.currentText()
+        detector = self.window.detector_combo.currentData()
+        tracker = self.window.tracker_combo.currentData()
+        renderer = self.window.renderer_combo.currentData()
 
-        if detector != "SCRFD":
+        if detector != "scrfd":
             QMessageBox.warning(
                 self.window,
                 "尚未支援",
@@ -217,7 +326,7 @@ class Controller(QObject):
             f"{output_path.stem}_video_only.mp4"
         )
 
-        config = ConfigManager()
+        config = self.config
 
         config.set(
             "video.input",
@@ -234,6 +343,21 @@ class Controller(QObject):
             str(output_path)
         )
 
+        config.set(
+            "detector.type",
+            detector,
+        )
+
+        config.set(
+            "tracker.type",
+            tracker,
+        )
+
+        config.set(
+            "renderer.type",
+            renderer,
+        )
+
         self.window.log_edit.clear()
 
         self.add_log("-" * 50)
@@ -247,8 +371,20 @@ class Controller(QObject):
         )
 
         self.add_log(
-            f"偵測器：{detector}"
+            "偵測器："
+            f"{self.window.detector_combo.currentText()}"
         )
+
+        self.add_log(
+            "追蹤器："
+            f"{self.window.tracker_combo.currentText()}"
+        )
+
+        self.add_log(
+            "處理方式："
+            f"{self.window.renderer_combo.currentText()}"
+        )
+        
         self.start_worker(config)
 
     def start_worker(self, config):

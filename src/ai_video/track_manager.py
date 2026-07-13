@@ -49,7 +49,15 @@ class TrackManager:
         face.track_id = track.track_id
         track.face = face
 
+        track.last_confirmed_box = (
+            float(face.x1),
+            float(face.y1),
+            float(face.x2),
+            float(face.y2),
+        )
+
         track.age += 1
+        
         track.missed = 0
         track.state = TrackState.ACTIVE
 

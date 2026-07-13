@@ -22,7 +22,19 @@ class Track:
 
     predicted_x: float = 0.0
     predicted_y: float = 0.0
-    predicted_box: tuple[float, float, float, float] | None = None
+    predicted_box: tuple[
+        float, 
+        float, 
+        float, 
+        float
+    ] | None = None
+
+    last_confirmed_box: tuple[
+        float, 
+        float, 
+        float, 
+        float
+    ] | None = None
 
     embedding_history: list[np.ndarray] = field(default_factory=list)
 
@@ -40,12 +52,15 @@ class Track:
         self.predicted_x = center_x
         self.predicted_y = center_y
 
-        self.predicted_box = (
+        initial_box = (
             float(self.face.x1),
             float(self.face.y1),
             float(self.face.x2),
             float(self.face.y2),
         )
+
+        self.predicted_box = initial_box
+        self.last_confirmed_box = initial_box
 
         self.add_embedding(self.face.embedding)
 

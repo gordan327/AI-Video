@@ -6,7 +6,10 @@ import yaml
 class ConfigManager:
     """讀取並管理 AI-Video 設定。"""
 
-    def __init__(self, config_path: str | Path | None = None):
+    def __init__(
+        self,
+        config_path: str | Path | None = None,
+    ):
         if config_path is None:
             config_path = (
                 Path(__file__).resolve().parent
@@ -15,6 +18,13 @@ class ConfigManager:
             )
 
         self.config_path = Path(config_path)
+
+        self.config = {}
+
+        self.reload()
+
+    def reload(self):
+        """重新從設定檔載入設定。"""
 
         if not self.config_path.exists():
             raise FileNotFoundError(
@@ -54,7 +64,7 @@ class ConfigManager:
         使用點號修改設定值。
 
         例如：
-        config.set("video.input", "/path/input.mp4")
+        config.set("detector.confidence", 0.60)
         """
 
         parts = key.split(".")
@@ -70,3 +80,23 @@ class ConfigManager:
             target = current
 
         target[parts[-1]] = value
+
+    def save(self):
+        """將目前設定寫回 YAML 檔案。"""
+
+        self.config_path.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        with self.config_path.open(
+            "w",
+            encoding="utf-8",
+        ) as file:
+            yaml.safe_dump(
+                self.config,
+                file,
+                allow_unicode=True,
+                sort_keys=False,
+                default_flow_style=False,
+            )
