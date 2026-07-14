@@ -3,15 +3,17 @@ from time import perf_counter
 
 from tqdm import tqdm
 
-from ai_video.bytetrack_face_tracker import ByteTrackFaceTracker
+from ai_video.tracker_factory import (
+    TrackerFactory,
+)
 from ai_video.face_renderer import FaceRenderer
 from ai_video.ffmpeg_processor import FFmpegProcessor
 from ai_video.model_manager import ModelManager
 from ai_video.processing_stats import ProcessingStats
-from ai_video.scrfd_face_detector import SCRFDFaceDetector
 from ai_video.video_reader import VideoReader
 from ai_video.video_writer import VideoWriter
 from ai_video.logger import Logger
+from ai_video.detector_factory import DetectorFactory
 
 
 class VideoProcessor:
@@ -40,12 +42,20 @@ class VideoProcessor:
 
         self.model_manager = ModelManager(self.config)
 
-        self.detector = SCRFDFaceDetector(
-            self.model_manager,
-            self.config,
+        self.detector = DetectorFactory.create(
+            detector_type=self.config.get(
+                "detector.type",
+                "scrfd",
+            ),
+            model_manager=self.model_manager,
+            config=self.config,
         )
 
-        self.tracker = ByteTrackFaceTracker(
+        self.tracker = TrackerFactory.create(
+            tracker_type=self.config.get(
+                "tracker.type",
+                "bytetrack",
+            ),
             privacy_hold_frames=self.config.get(
                 "tracker.privacy_hold_frames",
                 15,
