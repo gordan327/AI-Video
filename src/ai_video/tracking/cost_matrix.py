@@ -1,5 +1,5 @@
-from ai_video.appearance import cosine_similarity
-from ai_video.geometry import (
+from ai_video.tracking.appearance import cosine_similarity
+from ai_video.tracking.geometry import (
     calculate_center_distance,
     calculate_iou,
 )

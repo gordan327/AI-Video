@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from ai_video.appearance import cosine_similarity
+from ai_video.tracking.appearance import cosine_similarity
 
 
 def test_same_embedding():

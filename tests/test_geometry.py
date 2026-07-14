@@ -1,6 +1,6 @@
 import pytest
 
-from ai_video.geometry import (
+from ai_video.tracking.geometry import (
     bbox_area,
     bbox_center,
     calculate_center_distance,

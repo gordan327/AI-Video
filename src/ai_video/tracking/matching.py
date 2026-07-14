@@ -1,5 +1,5 @@
-from ai_video.assignment import HungarianAssignment
-from ai_video.cost_matrix import CostMatrix
+from ai_video.tracking.assignment import HungarianAssignment
+from ai_video.tracking.cost_matrix import CostMatrix
 
 
 class Matcher:

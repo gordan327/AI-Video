@@ -1,297 +1,272 @@
 # AI-Video Architecture
 
-AI-Video 是一套以 Python 開發的影片隱私保護引擎（Privacy Protection Engine）。
-
-系統採用模組化（Modular）、可擴充（Extensible）以及 Plugin 架構設計，將人臉偵測、追蹤、隱私區域計算與影像處理彼此分離，使每個元件都可以獨立演進與測試。
+> Version: Architecture 2.0
 
 ---
 
-# Overall Architecture
+# 1. Design Philosophy
 
-```text
-                        GUI
-                         │
-                    Controller
-                         │
-                  VideoProcessor
-                         │
-        ┌────────────────┼────────────────┐
-        │                │                │
-        ▼                ▼                ▼
-   FaceDetector     FaceTracker     FaceRenderer
-        │                │                │
-        ▼                ▼                ▼
-      SCRFD         ByteTrack      RendererFactory
-                                              │
-                           ┌──────────────────┴──────────────────┐
-                           ▼                                     ▼
-                    BlurRenderer                       PixelateRenderer
+AI-Video is designed as a modular, extensible, and maintainable video privacy framework.
+
+The project follows several core principles:
+
+- Single Responsibility Principle
+- Layered Architecture
+- Factory Pattern
+- Plugin Architecture
+- Low Coupling
+- High Cohesion
+
+Every subsystem has a clear responsibility and communicates through well-defined interfaces.
+
+---
+
+# 2. Overall Architecture
+
+```
+                GUI
+                 │
+                 ▼
+          VideoProcessor
+                 │
+     ┌───────────┼───────────┐
+     ▼           ▼           ▼
+ Detector     Tracker    Renderer
+     │           │           │
+ Detector    Tracking   Renderer
+ Factory      Engine     Factory
+     │
+     ▼
+  AI Models
+
+                 │
+                 ▼
+        Video Reader / Writer
 ```
 
+The VideoProcessor coordinates the complete pipeline while individual modules remain independent.
+
 ---
 
-# Processing Pipeline
+# 3. Package Structure
 
-每一支影片都依照下列流程處理：
+```
+ai_video/
 
-```text
-Video
-  │
-  ▼
-Read Frame
-  │
-  ▼
-Face Detection
-  │
-  ▼
-Face Tracking
-  │
-  ▼
-Privacy Region
-  │
-  ▼
-Renderer
-  │
-  ▼
-Write Frame
-  │
-  ▼
-Output Video
+├── detector/
+├── tracker/
+├── tracking/
+├── renderer/
+├── video/
+├── gui/
+├── config/
+├── models/
+│
+├── processor.py
+├── model_manager.py
+├── config_manager.py
+├── privacy_region.py
+├── processing_stats.py
+├── logger.py
+├── face.py
+└── version.py
 ```
 
----
+The root package contains only shared services and domain objects.
 
-# Core Components
-
-## FaceDetector
-
-負責：
-
-- 人臉偵測
-- 輸出 Face 物件
-- 不負責追蹤
-
-目前支援：
-
-- SCRFD
-
-未來規劃：
-
-- RetinaFace
-- YOLO Face
+Subsystem implementations are placed in dedicated packages.
 
 ---
 
-## FaceTracker
+# 4. Processing Pipeline
 
-負責：
-
-- Track ID 管理
-- Kalman Prediction
-- IoU Matching
-- Embedding Matching
-- Temporal Hold
-
-目前支援：
-
-- ByteTrack
-
-未來規劃：
-
-- DeepSORT
-- StrongSORT
-
----
-
-## PrivacyRegion
-
-PrivacyRegion 負責將 Detector 回傳的人臉框擴張成真正需要保護的頭部區域。
-
-例如：
-
-```text
-Detector Box
-
-+--------+
-
-↓
-
-Privacy Region
-
-+--------------+
-|              |
-|    Head      |
-|              |
-+--------------+
 ```
-
-主要考量：
-
-- 頭髮
-- 耳朵
-- 側臉
-- 下巴
-
----
-
-## Renderer
-
-Renderer 只負責：
-
-> 如何保護指定區域。
-
-目前 Renderer 完全不知道：
-
-- Detector
-- Tracker
-- GUI
-
-只需要：
-
-```python
-render(frame, box)
-```
-
-即可。
-
-目前支援：
-
-- Blur
-- Pixelate
-
-未來規劃：
-
-- Solid Color
-- Emoji
-- Mosaic
-- AI Replace
-
----
-
-# Renderer Plugin Architecture
-
-```text
-BaseRenderer
-      ▲
+VideoReader
       │
- ┌────┴────────────┐
- │                 │
- ▼                 ▼
-BlurRenderer   PixelateRenderer
+      ▼
+Face Detector
+      │
+      ▼
+Face Tracker
+      │
+      ▼
+Privacy Region
+      │
+      ▼
+Renderer
+      │
+      ▼
+VideoWriter
 ```
 
-RendererFactory 負責建立 Renderer。
+Each stage performs a single responsibility.
 
-```text
-Config
+---
 
-↓
+# 5. Plugin Architecture
 
+Detector
+
+```
+DetectorFactory
+
+      │
+
+ ┌────┴─────┐
+ │          │
+SCRFD     YOLO
+```
+
+Tracker
+
+```
+TrackerFactory
+
+      │
+
+ ByteTrack
+```
+
+Renderer
+
+```
 RendererFactory
 
+      │
+
+ ┌────┴────────┐
+ │             │
+Blur      Pixelate
+```
+
+New implementations can be added by registering them in the corresponding Factory.
+
+---
+
+# 6. Data Flow
+
+```
+Frame
+
+↓
+
+Detector
+
+↓
+
+List[Face]
+
+↓
+
+Tracker
+
+↓
+
+Tracked Face
+
+↓
+
+PrivacyRegion
+
 ↓
 
 Renderer
+
+↓
+
+Frame
+
+↓
+
+VideoWriter
 ```
 
-因此新增新的 Renderer 時：
-
-1. 新增 Renderer 類別
-2. 註冊到 Factory
-
-即可完成擴充。
+The Face object is the shared domain model across the pipeline.
 
 ---
 
-# Configuration
+# 7. Package Responsibilities
 
-所有元件都透過 ConfigManager 取得設定。
+## detector/
 
-例如：
+Responsible for AI-based face detection.
 
-```yaml
-renderer:
-  type: blur
-  blur_strength: 51
-  pixel_size: 12
-```
+## tracker/
 
-GUI 不直接控制 Renderer，而是修改設定。
+Responsible for high-level tracking components.
 
----
+## tracking/
 
-# GUI Architecture
+Contains internal tracking algorithms:
 
-```text
-MainWindow
-      │
-      ▼
-Controller
-      │
-      ▼
-Worker Thread
-      │
-      ▼
-VideoProcessor
-```
+- Kalman Filter
+- Matching
+- Cost Matrix
+- Assignment
+- Geometry
+- Track Manager
 
-GUI 不直接操作任何演算法。
+## renderer/
 
-所有影片處理皆在背景執行。
+Responsible for privacy rendering.
 
----
+## video/
 
-# Testing
+Responsible for video I/O and FFmpeg integration.
 
-目前已建立 pytest 自動測試。
+## gui/
 
-包含：
+Desktop application.
 
-- RendererFactory
-- BlurRenderer
-- FaceRenderer
-- PrivacyRegion
+## models/
 
-目的：
-
-- 防止重構造成 Regression
-- 提升程式可靠性
-- 縮短測試時間
+AI model management.
 
 ---
 
-# Design Principles
+# 8. Design Principles
 
-AI-Video 遵循下列設計原則：
+AI-Video follows the following software engineering principles.
 
-- Single Responsibility Principle (SRP)
-- Open / Closed Principle (OCP)
-- Composition over Inheritance
-- Plugin Architecture
-- Config-driven Design
-- Testable Components
+## Layered Architecture
 
----
+Each layer only communicates with adjacent layers.
 
-# Future Roadmap
+## Factory Pattern
 
-## Version 0.7
+Subsystem implementations are created through Factory classes.
 
-- DetectorFactory
-- TrackerFactory
+## Plugin Pattern
 
----
+New detectors, trackers, and renderers can be added without modifying the processing pipeline.
 
-## Version 0.8
+## Single Responsibility Principle
 
-- Plugin Registry
-- 更多 Renderer
+Every class has one primary responsibility.
+
+## Dependency Isolation
+
+The processor coordinates modules without depending on implementation details.
 
 ---
 
-## Version 1.0
+# 9. Future Extensions
 
-- Plugin SDK
-- 自動載入 Renderer
-- Third-party Renderer Support
-- 正式版發布
+Planned detector plugins
+
+- RetinaFace
+- YOLOv11 Face
+
+Planned tracker plugins
+
+- StrongSORT
+- DeepSORT
+
+Planned renderer plugins
+
+- Solid Color
+- Mosaic
+- Emoji
+- AI Replacement
+
+The architecture is intentionally designed so that these extensions require minimal changes to existing code.

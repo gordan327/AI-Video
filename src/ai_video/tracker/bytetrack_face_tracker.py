@@ -1,7 +1,7 @@
 from ai_video.face import Face
-from ai_video.face_tracker import FaceTracker
-from ai_video.matching import Matcher
-from ai_video.track_manager import TrackManager
+from ai_video.tracker.face_tracker import FaceTracker
+from ai_video.tracking.matching import Matcher
+from ai_video.tracking.track_manager import TrackManager
 
 
 class ByteTrackFaceTracker(FaceTracker):

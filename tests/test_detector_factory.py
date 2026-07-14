@@ -1,8 +1,8 @@
 import pytest
 
-from ai_video.detector_factory import DetectorFactory
-from ai_video.face_detector import FaceDetector
-from ai_video.scrfd_face_detector import SCRFDFaceDetector
+from ai_video.detector.detector_factory import DetectorFactory
+from ai_video.detector.face_detector import FaceDetector
+from ai_video.detector.scrfd_face_detector import SCRFDFaceDetector
 
 
 class DummyConfig:

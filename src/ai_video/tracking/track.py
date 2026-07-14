@@ -3,8 +3,8 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from ai_video.face import Face
-from ai_video.kalman_filter import KalmanFilter
-from ai_video.track_state import TrackState
+from ai_video.tracking.kalman_filter import KalmanFilter
+from ai_video.tracking.track_state import TrackState
 
 
 @dataclass

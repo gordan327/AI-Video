@@ -1,7 +1,7 @@
-from ai_video.bytetrack_face_tracker import (
+from ai_video.tracker.bytetrack_face_tracker import (
     ByteTrackFaceTracker,
 )
-from ai_video.face_tracker import FaceTracker
+from ai_video.tracker.face_tracker import FaceTracker
 
 
 _TRACKERS = {

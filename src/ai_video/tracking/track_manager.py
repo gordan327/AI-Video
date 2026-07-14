@@ -1,6 +1,6 @@
 from ai_video.face import Face
-from ai_video.track import Track
-from ai_video.track_state import TrackState
+from ai_video.tracking.track import Track
+from ai_video.tracking.track_state import TrackState
 
 
 class TrackManager:

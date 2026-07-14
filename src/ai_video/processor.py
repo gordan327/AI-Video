@@ -3,17 +3,23 @@ from time import perf_counter
 
 from tqdm import tqdm
 
-from ai_video.tracker_factory import (
+from ai_video.tracker.tracker_factory import (
     TrackerFactory,
 )
 from ai_video.face_renderer import FaceRenderer
-from ai_video.ffmpeg_processor import FFmpegProcessor
 from ai_video.model_manager import ModelManager
 from ai_video.processing_stats import ProcessingStats
-from ai_video.video_reader import VideoReader
-from ai_video.video_writer import VideoWriter
 from ai_video.logger import Logger
-from ai_video.detector_factory import DetectorFactory
+from ai_video.detector.detector_factory import DetectorFactory
+from ai_video.video.ffmpeg_processor import (
+    FFmpegProcessor,
+)
+from ai_video.video.video_reader import (
+    VideoReader,
+)
+from ai_video.video.video_writer import (
+    VideoWriter,
+)
 
 
 class VideoProcessor:

@@ -1,10 +1,10 @@
 import pytest
 
-from ai_video.bytetrack_face_tracker import (
+from ai_video.tracker.bytetrack_face_tracker import (
     ByteTrackFaceTracker,
 )
-from ai_video.face_tracker import FaceTracker
-from ai_video.tracker_factory import TrackerFactory
+from ai_video.tracker.face_tracker import FaceTracker
+from ai_video.tracker.tracker_factory import TrackerFactory
 
 
 def test_create_bytetrack_tracker():

@@ -1,6 +1,6 @@
 import pytest
 
-from ai_video.kalman_filter import KalmanFilter
+from ai_video.tracking.kalman_filter import KalmanFilter
 
 
 def test_initiate_sets_position_and_zero_velocity():

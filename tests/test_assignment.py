@@ -1,4 +1,4 @@
-from ai_video.assignment import HungarianAssignment
+from ai_video.tracking.assignment import HungarianAssignment
 
 
 def test_empty_matrix_returns_no_pairs():

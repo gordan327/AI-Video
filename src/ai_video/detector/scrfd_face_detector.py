@@ -1,5 +1,5 @@
 from ai_video.face import Face
-from ai_video.face_detector import FaceDetector
+from ai_video.detector.face_detector import FaceDetector
 
 class SCRFDFaceDetector(FaceDetector):
     """使用 SCRFD 偵測人臉並取得 embedding。"""

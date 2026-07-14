@@ -1,4 +1,4 @@
-from ai_video.face_tracker import FaceTracker
+from ai_video.tracker.face_tracker import FaceTracker
 from ai_video.face import Face
 
 

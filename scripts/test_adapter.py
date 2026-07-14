@@ -1,5 +1,5 @@
 from ai_video.face import Face
-from ai_video.face_detection_adapter import FaceDetectionAdapter
+from ai_video.detector.face_detection_adapter import FaceDetectionAdapter
 
 adapter = FaceDetectionAdapter()
 

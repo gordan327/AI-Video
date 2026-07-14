@@ -1,7 +1,7 @@
 from ultralytics import YOLO
 
 from ai_video.face import Face
-from ai_video.face_detector import FaceDetector
+from ai_video.detector.face_detector import FaceDetector
 
 
 class YOLOFaceDetector(FaceDetector):

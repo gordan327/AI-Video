@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from ai_video.cost_matrix import CostMatrix
+from ai_video.tracking.cost_matrix import CostMatrix
 from ai_video.face import Face
-from ai_video.track import Track
+from ai_video.tracking.track import Track
 
 
 def create_face(
