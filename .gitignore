@@ -36,3 +36,8 @@ videos/
 
 # Environment
 .env
+
+# Python build artifacts
+*.egg-info/
+__pycache__/
+*.py[cod]
