@@ -12,11 +12,7 @@ from ai_video.version import (
 def print_version():
     """顯示目前 AI-Video 版本。"""
 
-    print("=" * 50)
     print(f"AI-Video {__version__}")
-    print(f"Build    : {__build__}")
-    print(f"Codename : {__codename__}")
-    print("=" * 50)
 
 def create_parser():
     """建立命令列參數解析器。"""
