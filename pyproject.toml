@@ -4,13 +4,36 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-video"
-version = "0.2.0"
-description = "AI Video Toolkit for face detection, tracking and blurring."
+version = "0.7.0"
+
+description = "Privacy-first AI Video Framework with plugin-based face detection, tracking and rendering."
+
 readme = "README.md"
+
 requires-python = ">=3.11"
 
 authors = [
     { name = "Hsieh Kuo-Ching" }
+]
+
+license = { file = "LICENSE" }
+
+keywords = [
+    "ai",
+    "video",
+    "privacy",
+    "face-detection",
+    "face-tracking",
+    "opencv",
+    "computer-vision",
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
 ]
 
 dependencies = [
@@ -19,16 +42,37 @@ dependencies = [
     "pyyaml",
     "tqdm",
     "ffmpeg-python",
-    "ultralytics"
+    "ultralytics",
 ]
 
+[project.urls]
+
+Homepage = "https://github.com/your-org/AI-Video"
+
+Documentation = "https://github.com/your-org/AI-Video/tree/master/docs"
+
+Repository = "https://github.com/your-org/AI-Video"
+
+Issues = "https://github.com/your-org/AI-Video/issues"
+
+[project.scripts]
+
+ai-video = "ai_video.cli:main"
+
+ai-video-gui = "ai_video.gui.app:main"
+
 [tool.setuptools]
-package-dir = {"" = "src"}
+
+package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
+
 where = ["src"]
 
 [tool.pytest.ini_options]
+
 testpaths = ["tests"]
+
 python_files = ["test_*.py"]
+
 addopts = "-v"
