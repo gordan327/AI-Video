@@ -30,6 +30,11 @@ def create_parser():
         help="Show version information.",
     )
 
+    parser.add_argument(
+        "--config",
+        help="Path to a YAML configuration file.",
+    )
+
     return parser
 
 def main():
@@ -41,7 +46,7 @@ def main():
         print_version()
         return
 
-    config = ConfigManager()
+    config = ConfigManager(args.config)
 
     processor = VideoProcessor(config)
 
