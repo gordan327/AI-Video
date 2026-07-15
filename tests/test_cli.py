@@ -9,3 +9,10 @@ def test_cli_accepts_config_option():
     )
 
     assert args.config == "config/config.yaml"
+
+def test_cli_default_config_is_none():
+    parser = create_parser()
+
+    args = parser.parse_args([])
+
+    assert args.config is None
