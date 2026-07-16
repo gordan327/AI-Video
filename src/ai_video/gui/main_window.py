@@ -1,5 +1,6 @@
 from pathlib import Path
 from ai_video import __version__
+from PySide6.QtWidgets import QMessageBox
 
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction
@@ -325,7 +326,32 @@ class MainWindow(QMainWindow):
         file_menu.addAction(preferences_action)
         file_menu.addSeparator()
         file_menu.addAction(quit_action)
+        help_menu = self.menuBar().addMenu("說明")
 
+        about_action = QAction(
+            "關於 AI-Video",
+            self,
+        )
+
+        about_action.triggered.connect(
+            self.show_about_dialog
+        )
+        help_menu.addAction(about_action)
+
+    def show_about_dialog(self):
+        """顯示 AI-Video 關於資訊。"""
+
+        QMessageBox.about(
+            self,
+            "關於 AI-Video",
+            (
+                f"<b>AI-Video {__version__}</b><br><br>"
+                "Privacy-first AI Video Framework<br><br>"
+                "以人臉偵測、追蹤與影像處理技術，"
+                "保護影片中的個人隱私。"
+            ),
+        )
+        
     def append_log(self, message: str):
         """在 GUI 執行紀錄中加入訊息。"""
 
