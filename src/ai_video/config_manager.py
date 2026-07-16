@@ -35,7 +35,27 @@ class ConfigManager:
             "r",
             encoding="utf-8",
         ) as file:
-            self.config = yaml.safe_load(file) or {}
+            loaded_config = yaml.safe_load(file)
+
+        if loaded_config is None:
+            loaded_config = {}
+
+        if not isinstance(loaded_config, dict):
+            raise ValueError(
+                "Configuration root must be a mapping."
+            )
+
+        self.config = loaded_config
+
+        if loaded_config is None:
+            loaded_config = {}
+
+        if not isinstance(loaded_config, dict):
+            raise ValueError(
+                "Configuration root must be a mapping."
+            )
+
+        self.config = loaded_config
 
     def get(self, key: str, default=None):
         """

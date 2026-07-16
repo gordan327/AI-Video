@@ -174,3 +174,29 @@ def test_save_and_reload(
         )
         == 77
     )
+
+def test_reject_non_mapping_root(
+    tmp_path,
+):
+    """YAML 根節點不是 mapping 時應拒絕載入。"""
+
+    config_path = tmp_path / "config.yaml"
+
+    config_path.write_text(
+        "- item1\n- item2\n",
+        encoding="utf-8",
+    )
+
+    try:
+        ConfigManager(
+            config_path=config_path,
+        )
+    except ValueError as error:
+        assert (
+            str(error)
+            == "Configuration root must be a mapping."
+        )
+    else:
+        raise AssertionError(
+            "Expected ValueError"
+        )
