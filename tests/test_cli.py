@@ -26,3 +26,16 @@ def test_print_version(capsys):
     captured = capsys.readouterr()
 
     assert "AI-Video" in captured.out
+
+from ai_video.cli import main
+
+
+def test_main_version_returns_zero(
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        "sys.argv",
+        ["ai-video", "--version"],
+    )
+
+    assert main() == 0
