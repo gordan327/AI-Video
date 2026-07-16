@@ -16,3 +16,13 @@ def test_cli_default_config_is_none():
     args = parser.parse_args([])
 
     assert args.config is None
+
+from ai_video.cli import print_version
+
+
+def test_print_version(capsys):
+    print_version()
+
+    captured = capsys.readouterr()
+
+    assert "AI-Video" in captured.out

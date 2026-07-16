@@ -44,14 +44,21 @@ def main():
 
     if args.version:
         print_version()
-        return
+        return 0
 
     config = ConfigManager(args.config)
 
     processor = VideoProcessor(config)
 
-    processor.run()
+    success = processor.run()
 
+    if success:
+        return 0
+
+    return 2
+
+
+import sys
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
