@@ -1,4 +1,5 @@
 from pathlib import Path
+from ai_video import __version__
 
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction
@@ -34,7 +35,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("AI-Video 0.6 Beta")
+        self.setWindowTitle(f"AI-Video {__version__}")
         self.resize(900, 650)
         self.setAcceptDrops(True)
 
