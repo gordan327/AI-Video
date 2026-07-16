@@ -31,11 +31,16 @@ class ConfigManager:
                 f"找不到設定檔：{self.config_path}"
             )
 
-        with self.config_path.open(
-            "r",
-            encoding="utf-8",
-        ) as file:
-            loaded_config = yaml.safe_load(file)
+        try:
+            with self.config_path.open(
+                "r",
+                encoding="utf-8",
+            ) as file:
+                loaded_config = yaml.safe_load(file)
+        except yaml.YAMLError as error:
+            raise ValueError(
+                f"Invalid YAML configuration: {self.config_path}"
+            ) from error
 
         if loaded_config is None:
             loaded_config = {}

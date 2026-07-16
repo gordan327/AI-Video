@@ -200,3 +200,26 @@ def test_reject_non_mapping_root(
         raise AssertionError(
             "Expected ValueError"
         )
+
+def test_invalid_yaml_should_raise_value_error(
+    tmp_path,
+):
+    """YAML 格式錯誤應回報 ValueError。"""
+
+    config_path = tmp_path / "config.yaml"
+
+    config_path.write_text(
+        "detector:\n  type: [scrfd\n",
+        encoding="utf-8",
+    )
+    
+    try:
+        ConfigManager(
+            config_path=config_path,
+        )
+    except ValueError:
+        pass
+    else:
+        raise AssertionError(
+            "Expected ValueError"
+        )
