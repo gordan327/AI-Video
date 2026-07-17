@@ -23,7 +23,7 @@ class Controller(QObject):
     )
 
     def __init__(self, window):
-        super().__init__(window)
+        super().__init__()
 
         self.window = window
 
@@ -34,7 +34,7 @@ class Controller(QObject):
         self.connect_signals()
         self.log_received.connect(
             self.window.append_log
-        )
+    )
 
         self._logger_listener = (
             self.log_received.emit
@@ -384,7 +384,7 @@ class Controller(QObject):
             "處理方式："
             f"{self.window.renderer_combo.currentText()}"
         )
-        
+
         self.start_worker(config)
 
     def start_worker(self, config):

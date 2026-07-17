@@ -142,6 +142,14 @@ class MainWindow(QMainWindow):
         )
         self.tracker_combo.setMinimumWidth(150)
 
+        self.detector_combo.currentIndexChanged.connect(
+            self.save_detector_setting,
+        )
+
+        self.tracker_combo.currentIndexChanged.connect(
+            self.save_tracker_setting,
+        )
+
         renderer_label = QLabel("處理方式")
         renderer_label.setStyleSheet(
             "font-weight: bold;"
@@ -167,6 +175,24 @@ class MainWindow(QMainWindow):
             self.save_renderer_setting,
         )
 
+        self.restore_combo_setting(
+            self.detector_combo,
+            "detector",
+            "scrfd",
+        )
+
+        self.restore_combo_setting(
+            self.tracker_combo,
+            "tracker",
+            "bytetrack",
+        )
+
+        self.restore_combo_setting(
+            self.renderer_combo,
+            "renderer",
+            "blur",
+        )
+
         settings_row.addWidget(detector_label)
         settings_row.addWidget(self.detector_combo)
 
@@ -183,17 +209,11 @@ class MainWindow(QMainWindow):
         settings_row.addStretch()
 
         layout.addLayout(settings_row)
-        saved_renderer = self.settings.value(
+        self.restore_combo_setting(
+            self.renderer_combo,
             "renderer",
             "blur",
         )
-
-        index = self.renderer_combo.findData(
-            saved_renderer,
-        )
-
-        if index >= 0:
-            self.renderer_combo.setCurrentIndex(index)
 
         # 處理進度
         progress_title = QLabel("處理進度")
@@ -505,3 +525,37 @@ class MainWindow(QMainWindow):
             "renderer",
             self.renderer_combo.currentData(),
         )
+
+    def save_detector_setting(self):
+        """儲存 Detector 設定。"""
+
+        self.settings.setValue(
+            "detector",
+            self.detector_combo.currentData(),
+        )
+
+    def save_tracker_setting(self):
+        """儲存 Tracker 設定。"""
+
+        self.settings.setValue(
+            "tracker",
+            self.tracker_combo.currentData(),
+        )
+
+    def restore_combo_setting(
+        self,
+        combo,
+        key,
+        default,
+    ):
+        """恢復 ComboBox 設定。"""
+
+        value = self.settings.value(
+            key,
+            default,
+        )
+
+        index = combo.findData(value)
+
+        if index >= 0:
+            combo.setCurrentIndex(index)
