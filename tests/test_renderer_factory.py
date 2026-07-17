@@ -6,6 +6,7 @@ from ai_video.renderer.renderer_factory import RendererFactory
 from ai_video.renderer.pixelate_renderer import (
     PixelateRenderer,
 )
+from ai_video.renderer.solid_renderer import SolidRenderer
 
 def test_create_blur_renderer():
     renderer = RendererFactory.create(
@@ -61,3 +62,8 @@ def test_create_pixelate_renderer():
         renderer,
         BaseRenderer,
     )
+
+def test_create_solid_renderer():
+    renderer = RendererFactory.create("solid")
+
+    assert isinstance(renderer, SolidRenderer)

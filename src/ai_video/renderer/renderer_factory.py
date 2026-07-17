@@ -1,11 +1,13 @@
 from ai_video.renderer.base_renderer import BaseRenderer
 from ai_video.renderer.blur_renderer import BlurRenderer
 from ai_video.renderer.pixelate_renderer import PixelateRenderer
+from ai_video.renderer.solid_renderer import SolidRenderer
 
 
 _RENDERERS = {
     "blur": BlurRenderer,
     "pixelate": PixelateRenderer,
+    "solid": SolidRenderer,
 }
 
 
@@ -44,6 +46,9 @@ class RendererFactory:
                     12,
                 ),
             )
+
+        if renderer_type == "solid":
+            return renderer_class()
 
         raise ValueError(
             f"未知 Renderer：{renderer_type}"
