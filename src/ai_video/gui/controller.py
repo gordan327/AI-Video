@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QThread, Signal, Slot
+from PySide6.QtCore import QObject, QSettings, QThread, Signal, Slot
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from ai_video.config_manager import ConfigManager
@@ -27,14 +27,20 @@ class Controller(QObject):
 
         self.window = window
 
+        self.settings = QSettings(
+            "AI-Video",
+            "AI-Video",
+        )
+
         self.thread = None
         self.worker = None
         self.config = ConfigManager()
 
         self.connect_signals()
+
         self.log_received.connect(
             self.window.append_log
-    )
+        )
 
         self._logger_listener = (
             self.log_received.emit
@@ -45,6 +51,11 @@ class Controller(QObject):
         )
 
         Logger.info("AI-Video 已啟動")
+
+        self.settings = QSettings(
+            "AI-Video",
+            "AI-Video",
+        )
 
     def add_log(
         self,
@@ -95,10 +106,6 @@ class Controller(QObject):
             self.select_input_video
         )
 
-        self.window.open_video_requested.connect(
-            self.select_input_video
-        )
-
         self.window.preferences_requested.connect(
             self.show_preferences
         )
@@ -112,8 +119,14 @@ class Controller(QObject):
             str(input_path)
         )
 
-        output_path = input_path.with_name(
-            f"{input_path.stem}_blurred.mp4"
+        output_directory = self.settings.value(
+            "paths/output_directory",
+            str(input_path.parent),
+        )
+
+        output_path = (
+            Path(output_directory)
+            / f"{input_path.stem}_blurred.mp4"
         )
 
         self.window.output_edit.setText(
@@ -157,12 +170,20 @@ class Controller(QObject):
         filename, _ = QFileDialog.getOpenFileName(
             self.window,
             "選擇輸入影片",
-            "",
+            self.settings.value(
+                "paths/input_directory",
+                "",
+            ),
             self.VIDEO_FILTER,
         )
 
         if not filename:
             return
+
+        self.settings.setValue(
+            "paths/input_directory",
+            str(Path(filename).parent),
+        )
 
         self.set_input_video(filename)
 
@@ -171,15 +192,37 @@ class Controller(QObject):
 
         current_output = self.window.output_edit.text().strip()
 
+        output_directory = self.settings.value(
+            "paths/output_directory",
+            "",
+        )
+
+        output_name = (
+            Path(current_output).name
+            if current_output
+            else "output.mp4"
+        )
+
+        initial_output = str(
+            Path(output_directory)
+            / output_name
+        )
+
         filename, _ = QFileDialog.getSaveFileName(
             self.window,
             "指定輸出影片",
-            current_output,
+            initial_output,
             "MP4 影片 (*.mp4);;所有檔案 (*)",
+            options=QFileDialog.Option.DontUseNativeDialog,
         )
 
         if not filename:
             return
+
+        self.settings.setValue(
+            "paths/output_directory",
+            str(Path(filename).parent),
+        )
 
         output_path = Path(filename)
 
