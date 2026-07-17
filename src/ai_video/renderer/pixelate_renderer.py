@@ -22,41 +22,13 @@ class PixelateRenderer(BaseRenderer):
     ):
         """對指定矩形區域套用馬賽克。"""
 
-        frame_height, frame_width = frame.shape[:2]
-
-        x1, y1, x2, y2 = box
-
-        x1 = max(
-            0,
-            min(frame_width, int(x1)),
+        roi = self.extract_roi(
+            frame,
+            box,
         )
 
-        y1 = max(
-            0,
-            min(frame_height, int(y1)),
-        )
-
-        x2 = max(
-            0,
-            min(frame_width, int(x2)),
-        )
-
-        y2 = max(
-            0,
-            min(frame_height, int(y2)),
-        )
-
-        if x2 <= x1 or y2 <= y1:
+        if roi is None:
             return
-
-        roi = frame[
-            y1:y2,
-            x1:x2,
-        ]
-
-        if roi.size == 0:
-            return
-
         region_height, region_width = roi.shape[:2]
 
         small_width = max(
