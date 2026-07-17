@@ -2,7 +2,7 @@ from pathlib import Path
 from ai_video import __version__
 from PySide6.QtWidgets import QMessageBox
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QSettings, Signal
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QComboBox,
@@ -35,6 +35,10 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.settings = QSettings(
+            "AI-Video",
+            "AI-Video",
+)
 
         self.setWindowTitle(f"AI-Video {__version__}")
         self.resize(900, 650)
@@ -159,6 +163,9 @@ class MainWindow(QMainWindow):
         )
 
         self.renderer_combo.setMinimumWidth(120)
+        self.renderer_combo.currentIndexChanged.connect(
+            self.save_renderer_setting,
+        )
 
         settings_row.addWidget(detector_label)
         settings_row.addWidget(self.detector_combo)
@@ -176,6 +183,17 @@ class MainWindow(QMainWindow):
         settings_row.addStretch()
 
         layout.addLayout(settings_row)
+        saved_renderer = self.settings.value(
+            "renderer",
+            "blur",
+        )
+
+        index = self.renderer_combo.findData(
+            saved_renderer,
+        )
+
+        if index >= 0:
+            self.renderer_combo.setCurrentIndex(index)
 
         # 處理進度
         progress_title = QLabel("處理進度")
@@ -479,3 +497,11 @@ class MainWindow(QMainWindow):
         )
 
         event.acceptProposedAction()
+
+    def save_renderer_setting(self):
+        """儲存 Renderer 設定。"""
+
+        self.settings.setValue(
+            "renderer",
+            self.renderer_combo.currentData(),
+        )
