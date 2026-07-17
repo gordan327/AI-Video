@@ -152,6 +152,12 @@ class MainWindow(QMainWindow):
             "馬賽克",
             "pixelate",
         )
+
+        self.renderer_combo.addItem(
+            "純色遮蔽",
+            "solid",
+        )
+
         self.renderer_combo.setMinimumWidth(120)
 
         settings_row.addWidget(detector_label)
@@ -351,7 +357,7 @@ class MainWindow(QMainWindow):
                 "保護影片中的個人隱私。"
             ),
         )
-        
+
     def append_log(self, message: str):
         """在 GUI 執行紀錄中加入訊息。"""
 
