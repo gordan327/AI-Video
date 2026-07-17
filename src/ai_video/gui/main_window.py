@@ -381,6 +381,13 @@ class MainWindow(QMainWindow):
             self.show_about_dialog
         )
         help_menu.addAction(about_action)
+        
+        geometry = self.settings.value(
+            "window/geometry",
+        )
+
+        if geometry is not None:
+            self.restoreGeometry(geometry)
 
     def show_about_dialog(self):
         """顯示 AI-Video 關於資訊。"""
@@ -559,3 +566,13 @@ class MainWindow(QMainWindow):
 
         if index >= 0:
             combo.setCurrentIndex(index)
+
+    def closeEvent(self, event):
+        """關閉視窗前儲存視窗位置與大小。"""
+
+        self.settings.setValue(
+            "window/geometry",
+            self.saveGeometry(),
+        )
+
+        super().closeEvent(event)
