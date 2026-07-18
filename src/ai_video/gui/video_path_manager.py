@@ -31,3 +31,15 @@ class VideoPathManager:
             output_path = output_path.with_suffix(".mp4")
 
         return output_path
+
+    @staticmethod
+    def build_temp_output_path(
+        output_filename: str | Path,
+    ) -> Path:
+        """建立不含音訊的暫存影片路徑。"""
+
+        output_path = Path(output_filename)
+
+        return output_path.with_name(
+            f"{output_path.stem}_video_only.mp4"
+        )

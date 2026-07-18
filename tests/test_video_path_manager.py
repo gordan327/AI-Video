@@ -39,3 +39,14 @@ def test_build_output_path_adds_mp4_suffix():
     assert output_path == Path(
         "/exports/result.mp4"
     )
+
+def test_build_temp_output_path():
+    temp_output_path = (
+        VideoPathManager.build_temp_output_path(
+            "/exports/result.mp4"
+        )
+    )
+
+    assert temp_output_path == Path(
+        "/exports/result_video_only.mp4"
+    )
