@@ -10,6 +10,10 @@ from ai_video.gui.preferences_dialog import PreferencesDialog
 
 from ai_video.logger import Logger
 
+from ai_video.gui.video_path_manager import (
+    VideoPathManager,
+)
+
 
 class Controller(QObject):
     """處理 GUI 操作與影片處理流程。"""
@@ -121,8 +125,11 @@ class Controller(QObject):
         )
 
         output_path = (
-            Path(output_directory)
-            / f"{input_path.stem}_blurred.mp4"
+            VideoPathManager
+            .build_default_output_path(
+                input_path,
+                output_directory,
+            )
         )
 
         self.window.output_edit.setText(
@@ -220,10 +227,11 @@ class Controller(QObject):
             str(Path(filename).parent),
         )
 
-        output_path = Path(filename)
-
-        if not output_path.suffix:
-            output_path = output_path.with_suffix(".mp4")
+        output_path = (
+            VideoPathManager.build_output_path(
+            filename
+            )
+        )
 
         self.window.output_edit.setText(str(output_path))
         self.window.status_label.setText("已指定輸出影片")
