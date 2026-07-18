@@ -14,6 +14,9 @@ from ai_video.gui.video_path_manager import (
     VideoPathManager,
 )
 
+from ai_video.gui.processing_configuration import (
+    ProcessingConfiguration,
+)
 
 class Controller(QObject):
     """處理 GUI 操作與影片處理流程。"""
@@ -369,42 +372,19 @@ class Controller(QObject):
             )
             return
 
-        temp_output = output_path.with_name(
-            f"{output_path.stem}_video_only.mp4"
-        )
+        temp_output = VideoPathManager.build_temp_output_path(output_path)
 
         config = self.config
 
-        config.set(
-            "video.input",
-            str(input_path)
+        ProcessingConfiguration.apply(
+            config=config,
+            input_path=input_path,
+            output_path=output_path,
+            temp_output_path=temp_output,
+            detector=detector,
+            tracker=tracker,
+            renderer=renderer,
         )
-
-        config.set(
-            "video.temp_output",
-            str(temp_output)
-        )
-
-        config.set(
-            "video.output",
-            str(output_path)
-        )
-
-        config.set(
-            "detector.type",
-            detector,
-        )
-
-        config.set(
-            "tracker.type",
-            tracker,
-        )
-
-        config.set(
-            "renderer.type",
-            renderer,
-        )
-
 
         self.add_log("")
         self.window.append_log(
