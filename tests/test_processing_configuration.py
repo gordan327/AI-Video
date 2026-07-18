@@ -3,7 +3,7 @@ from pathlib import Path
 from ai_video.gui.processing_configuration import (
     ProcessingConfiguration,
 )
-
+from ai_video.gui.processing_job import ProcessingJob
 
 class FakeConfig:
     """測試用的簡易設定物件。"""
@@ -18,8 +18,7 @@ class FakeConfig:
 def test_apply_processing_configuration():
     config = FakeConfig()
 
-    ProcessingConfiguration.apply(
-        config=config,
+    job = ProcessingJob(
         input_path=Path("/videos/input.mp4"),
         output_path=Path("/exports/output.mp4"),
         temp_output_path=Path(
@@ -28,6 +27,11 @@ def test_apply_processing_configuration():
         detector="scrfd",
         tracker="bytetrack",
         renderer="blur",
+    )
+
+    ProcessingConfiguration.apply(
+        config=config,
+        job=job,
     )
 
     assert config.values == {

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from ai_video.config_manager import ConfigManager
+from ai_video.gui.processing_job import ProcessingJob
 
 class ProcessingConfiguration:
     """集中設定影片處理工作所需的組態。"""
@@ -8,41 +9,36 @@ class ProcessingConfiguration:
     @staticmethod
     def apply(
         config: ConfigManager,
-        input_path: str | Path,
-        output_path: str | Path,
-        temp_output_path: str | Path,
-        detector: str,
-        tracker: str,
-        renderer: str,
+        job: ProcessingJob,
     ) -> None:
-        """將影片處理參數寫入設定。"""
+        """將影片處理工作寫入設定。"""
 
         config.set(
             "video.input",
-            str(input_path),
+            str(job.input_path),
         )
 
         config.set(
             "video.temp_output",
-            str(temp_output_path),
+            str(job.temp_output_path),
         )
 
         config.set(
             "video.output",
-            str(output_path),
+            str(job.output_path),
         )
 
         config.set(
             "detector.type",
-            detector,
+            job.detector,
         )
 
         config.set(
             "tracker.type",
-            tracker,
+            job.tracker,
         )
 
         config.set(
             "renderer.type",
-            renderer,
+            job.renderer,
         )

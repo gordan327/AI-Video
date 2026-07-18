@@ -2,20 +2,18 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, QSettings, QThread, Signal, Slot
 from PySide6.QtWidgets import QFileDialog, QMessageBox
-
 from ai_video.config_manager import ConfigManager
 from ai_video.gui.worker import Worker
-
 from ai_video.gui.preferences_dialog import PreferencesDialog
-
 from ai_video.logger import Logger
-
 from ai_video.gui.video_path_manager import (
     VideoPathManager,
 )
-
 from ai_video.gui.processing_configuration import (
     ProcessingConfiguration,
+)
+from ai_video.gui.processing_job import (
+    ProcessingJob,
 )
 
 class Controller(QObject):
@@ -373,17 +371,20 @@ class Controller(QObject):
             return
 
         temp_output = VideoPathManager.build_temp_output_path(output_path)
-
-        config = self.config
-
-        ProcessingConfiguration.apply(
-            config=config,
+        job = ProcessingJob(
             input_path=input_path,
             output_path=output_path,
             temp_output_path=temp_output,
             detector=detector,
             tracker=tracker,
             renderer=renderer,
+        )
+
+        config = self.config
+
+        ProcessingConfiguration.apply(
+            config=config,
+            job=job,
         )
 
         self.add_log("")
