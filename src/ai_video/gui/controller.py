@@ -52,10 +52,6 @@ class Controller(QObject):
 
         Logger.info("AI-Video 已啟動")
 
-        self.settings = QSettings(
-            "AI-Video",
-            "AI-Video",
-        )
 
     def add_log(
         self,
@@ -401,9 +397,17 @@ class Controller(QObject):
             renderer,
         )
 
-        self.window.log_edit.clear()
 
-        self.add_log("-" * 50)
+        self.add_log("")
+        self.window.append_log(
+            "【直接測試】開始新的影片處理工作"
+        )
+
+        self.add_log("=" * 50)
+
+        self.add_log("開始新的影片處理工作")
+
+        self.add_log("=" * 50)
 
         self.add_log(
             f"開始處理影片：{input_path}"
