@@ -615,6 +615,10 @@ class Controller(QObject):
             not processing
         )
 
+        self.window.quit_button.setEnabled(
+            not processing
+        )
+
     @Slot(str)
     def processing_status_changed(self, message):
         """接收背景工作狀態。"""
