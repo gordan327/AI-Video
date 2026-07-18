@@ -328,8 +328,15 @@ class MainWindow(QMainWindow):
         self.stop_button.setMinimumWidth(120)
         self.stop_button.setEnabled(False)
 
+        self.quit_button = QPushButton("結束")
+        self.quit_button.setMinimumWidth(120)
+        self.quit_button.clicked.connect(
+            self.close
+        )
+
         button_row.addWidget(self.start_button)
         button_row.addWidget(self.stop_button)
+        button_row.addWidget(self.quit_button)
 
         layout.addLayout(button_row)
 
@@ -381,7 +388,7 @@ class MainWindow(QMainWindow):
             self.show_about_dialog
         )
         help_menu.addAction(about_action)
-        
+
         geometry = self.settings.value(
             "window/geometry",
         )
