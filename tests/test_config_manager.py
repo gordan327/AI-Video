@@ -4,6 +4,12 @@ import yaml
 
 from ai_video.config_manager import ConfigManager
 
+import pytest
+
+from ai_video.config.configuration_error import (
+    ConfigurationError,
+)
+
 
 def create_config_file(
     tmp_path: Path,
@@ -212,7 +218,7 @@ def test_invalid_yaml_should_raise_value_error(
         "detector:\n  type: [scrfd\n",
         encoding="utf-8",
     )
-    
+
     try:
         ConfigManager(
             config_path=config_path,
@@ -223,3 +229,42 @@ def test_invalid_yaml_should_raise_value_error(
         raise AssertionError(
             "Expected ValueError"
         )
+
+def test_validate_accepts_supported_renderer(
+    tmp_path,
+):
+    config_path = tmp_path / "config.yaml"
+
+    config_path.write_text(
+        "renderer:\n"
+        "  type: blur\n",
+        encoding="utf-8",
+    )
+
+    config_manager = ConfigManager(
+        config_path
+    )
+
+    config_manager.validate()
+
+
+def test_validate_rejects_unsupported_renderer(
+    tmp_path,
+):
+    config_path = tmp_path / "config.yaml"
+
+    config_path.write_text(
+        "renderer:\n"
+        "  type: banana\n",
+        encoding="utf-8",
+    )
+
+    config_manager = ConfigManager(
+        config_path
+    )
+
+    with pytest.raises(
+        ConfigurationError,
+        match="Unsupported renderer type: banana",
+    ):
+        config_manager.validate()

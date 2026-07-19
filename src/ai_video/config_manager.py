@@ -1,4 +1,7 @@
 from pathlib import Path
+from ai_video.config.configuration_error import (
+    ConfigurationError,
+)
 
 import yaml
 
@@ -124,4 +127,23 @@ class ConfigManager:
                 allow_unicode=True,
                 sort_keys=False,
                 default_flow_style=False,
+            )
+
+    def validate(self) -> None:
+        """驗證目前設定內容。"""
+
+        renderer_type = self.get(
+            "renderer.type"
+        )
+
+        supported_renderers = {
+            "blur",
+            "pixelate",
+            "solid",
+        }
+
+        if renderer_type not in supported_renderers:
+            raise ConfigurationError(
+                "Unsupported renderer type: "
+                f"{renderer_type}"
             )
