@@ -54,16 +54,7 @@ class ConfigManager:
             )
 
         self.config = loaded_config
-
-        if loaded_config is None:
-            loaded_config = {}
-
-        if not isinstance(loaded_config, dict):
-            raise ValueError(
-                "Configuration root must be a mapping."
-            )
-
-        self.config = loaded_config
+        self.validate()
 
     def get(self, key: str, default=None):
         """

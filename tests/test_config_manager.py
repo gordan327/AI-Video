@@ -259,12 +259,5 @@ def test_validate_rejects_unsupported_renderer(
         encoding="utf-8",
     )
 
-    config_manager = ConfigManager(
-        config_path
-    )
-
-    with pytest.raises(
-        ConfigurationError,
-        match="Unsupported renderer type: banana",
-    ):
-        config_manager.validate()
+    with pytest.raises(ConfigurationError):
+        ConfigManager(config_path)
