@@ -575,7 +575,10 @@ class MainWindow(QMainWindow):
             combo.setCurrentIndex(index)
 
     def closeEvent(self, event):
-        """關閉視窗前儲存視窗位置與大小。"""
+        """關閉視窗前安全停止背景工作並儲存視窗狀態。"""
+
+        if hasattr(self, "controller"):
+            self.controller.shutdown()
 
         self.settings.setValue(
             "window/geometry",

@@ -1,5 +1,5 @@
 video:
-  input: videos/demo.mp4
+  input: videos/not_found.mp4
   output: output/output.mp4
   temp_output: output/temp_video.mp4
 detector:

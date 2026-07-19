@@ -498,6 +498,19 @@ class Controller(QObject):
 
         self.worker.request_stop()
 
+    def shutdown(self):
+        """停止背景工作並等待執行緒安全結束。"""
+
+        if self.worker is not None:
+            self.worker.request_stop()
+
+        if (
+            self.thread is not None
+            and self.thread.isRunning()
+        ):
+            self.thread.quit()
+            self.thread.wait()
+
     @Slot(str)
     def processing_finished(self, output_path):
         """影片處理完成。"""
