@@ -15,6 +15,9 @@ from ai_video.gui.processing_configuration import (
 from ai_video.gui.processing_job import (
     ProcessingJob,
 )
+from ai_video.gui.processing_state_manager import (
+    ProcessingStateManager,
+)
 
 class Controller(QObject):
     """處理 GUI 操作與影片處理流程。"""
@@ -565,44 +568,9 @@ class Controller(QObject):
     def set_processing_state(self, processing):
         """切換處理期間的按鈕及輸入欄位狀態。"""
 
-        self.window.start_button.setEnabled(
-            not processing
-        )
-
-        self.window.stop_button.setEnabled(
-            processing
-        )
-
-        self.window.input_button.setEnabled(
-            not processing
-        )
-
-        self.window.output_button.setEnabled(
-            not processing
-        )
-
-        self.window.input_edit.setEnabled(
-            not processing
-        )
-
-        self.window.output_edit.setEnabled(
-            not processing
-        )
-
-        self.window.detector_combo.setEnabled(
-            not processing
-        )
-
-        self.window.tracker_combo.setEnabled(
-            not processing
-        )
-
-        self.window.renderer_combo.setEnabled(
-            not processing
-        )
-
-        self.window.quit_button.setEnabled(
-            not processing
+        ProcessingStateManager.apply(
+            window=self.window,
+            processing=processing,
         )
 
     @Slot(str)
