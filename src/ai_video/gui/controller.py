@@ -388,9 +388,6 @@ class Controller(QObject):
         )
 
         self.add_log("")
-        self.window.append_log(
-            "【直接測試】開始新的影片處理工作"
-        )
 
         self.add_log("=" * 50)
 
