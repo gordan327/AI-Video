@@ -4,7 +4,7 @@ video:
   temp_output: output/temp_video.mp4
 detector:
   model: buffalo_sc
-  det_size: 640
+  det_size: 800
   confidence: 0.40
 
 tracker:

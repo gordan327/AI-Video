@@ -21,9 +21,7 @@ class ModelManager:
                 "detector.model"
             )
 
-            det_size = self.config.get(
-                "detector.det_size"
-            )
+            det_size = self._resolve_det_size()
 
             provider = self.config.get(
                 "runtime.provider",
@@ -45,3 +43,17 @@ class ModelManager:
             )
 
         return self._face_analysis
+
+    def _resolve_det_size(self):
+        """取得實際使用的 SCRFD det_size。"""
+
+        det_size = self.config.get(
+            "detector.det_size"
+        )
+
+        if det_size == "auto":
+            # 第一版：auto 先固定使用 800。
+            # 後續可依影片解析度自動決定。
+            return 800
+
+        return int(det_size)
