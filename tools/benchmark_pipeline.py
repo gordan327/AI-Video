@@ -2,8 +2,9 @@
 """
 AI-Video Pipeline Benchmark Tool.
 
-Version 0.3 initializes the main pipeline components, reads the first
-video frame, and measures face detection performance on that frame.
+Version 0.4A initializes the main pipeline components, reads the first
+video frame, measures face detection performance, and saves a debug
+image with detected face bounding boxes.
 """
 
 from __future__ import annotations
@@ -15,9 +16,12 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any
 
+import cv2
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_PATH = PROJECT_ROOT / "src"
+DEBUG_IMAGE_PATH = PROJECT_ROOT / "benchmark_detect.jpg"
 
 if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
@@ -58,8 +62,8 @@ def create_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(
         description=(
-            "Initialize the AI-Video pipeline and benchmark "
-            "face detection on the first video frame."
+            "Initialize the AI-Video pipeline, benchmark face detection "
+            "on the first video frame, and save a debug image."
         ),
     )
 
@@ -84,7 +88,7 @@ def print_header() -> None:
 
     print("=" * 50)
     print("AI-Video Pipeline Benchmark")
-    print("Version 0.3")
+    print("Version 0.4A")
     print("=" * 50)
 
 
@@ -264,8 +268,60 @@ def print_detection_information(
     print(f"Elapsed     : {elapsed_milliseconds:.2f} ms")
 
 
+def save_debug_image(
+    frame: Any,
+    detections: Any,
+    output_path: Path,
+) -> None:
+    """Draw detected face boxes and save the debug image."""
+
+    debug_renderer = RendererFactory.create(
+        renderer_type="debug",
+        line_thickness=2,
+    )
+
+    debug_frame = frame.copy()
+
+    for face in detections:
+        debug_renderer.render(
+            debug_frame,
+            (
+                face.x1,
+                face.y1,
+                face.x2,
+                face.y2,
+            ),
+        )
+
+    output_path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    saved = cv2.imwrite(
+        str(output_path),
+        debug_frame,
+    )
+
+    if not saved:
+        raise RuntimeError(
+            f"Unable to save debug image: {output_path}"
+        )
+
+
+def print_debug_image_information(
+    output_path: Path,
+) -> None:
+    """Print debug image output information."""
+
+    print()
+    print("Debug Image")
+    print("-----------")
+    print(f"Output : {output_path}")
+
+
 def main() -> int:
-    """Benchmark face detection on the first video frame."""
+    """Benchmark first-frame detection and save a debug image."""
 
     parser = create_parser()
     args = parser.parse_args()
@@ -302,6 +358,16 @@ def main() -> int:
 
         print_detection_information(
             detection_result,
+        )
+
+        save_debug_image(
+            frame=frame,
+            detections=detection_result.detections,
+            output_path=DEBUG_IMAGE_PATH,
+        )
+
+        print_debug_image_information(
+            DEBUG_IMAGE_PATH,
         )
 
     except (
