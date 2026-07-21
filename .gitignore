@@ -60,6 +60,19 @@ videos/*.png
 # 保留 input 資料夾
 !input/.gitkeep
 
+# Local development videos
+videos/*.mp4
+videos/*.mov
+videos/*.avi
+videos/*.mkv
+videos/*.jpg
+videos/*.jpeg
+videos/*.png
+
+# Keep the folder structure
+!videos/.gitkeep
+!videos/README.md
+
 # -------------------------------------------------
 # Models (如果未來下載模型)
 # -------------------------------------------------
