@@ -56,3 +56,9 @@ class VideoReader:
 
         success, frame = self.cap.read()
         return success, frame
+
+    @property
+    def current_frame_index(self) -> int:
+        """目前 Frame 編號"""
+
+        return int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
