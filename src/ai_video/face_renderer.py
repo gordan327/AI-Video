@@ -21,7 +21,7 @@ class FaceRenderer:
             2,
             int(pixel_size),
         )
-        
+
         self.blur_strength = self._normalize_kernel_size(
             blur_strength
         )
@@ -142,93 +142,12 @@ class FaceRenderer:
         frame,
         box: tuple[int, int, int, int],
     ):
+        """將指定區域交由目前的 Renderer 處理。"""
+        
         self.effect_renderer.render(
             frame,
             box,
         )
-        return
-
-        """模糊指定矩形區域。"""
-
-        frame_height, frame_width = frame.shape[:2]
-
-        x1, y1, x2, y2 = box
-
-        x1 = max(
-            0,
-            min(frame_width, int(x1)),
-        )
-
-        y1 = max(
-            0,
-            min(frame_height, int(y1)),
-        )
-
-        x2 = max(
-            0,
-            min(frame_width, int(x2)),
-        )
-
-        y2 = max(
-            0,
-            min(frame_height, int(y2)),
-        )
-
-        if x2 <= x1 or y2 <= y1:
-            return
-
-        face_region = frame[
-            y1:y2,
-            x1:x2,
-        ]
-
-        if face_region.size == 0:
-            return
-
-        region_height, region_width = (
-            face_region.shape[:2]
-        )
-
-        kernel_size = min(
-            self.blur_strength,
-            region_width,
-            region_height,
-        )
-
-        kernel_size = self._normalize_kernel_size(
-            kernel_size
-        )
-
-        if kernel_size > region_width:
-            kernel_size = (
-                region_width
-                if region_width % 2 == 1
-                else region_width - 1
-            )
-
-        if kernel_size > region_height:
-            kernel_size = (
-                region_height
-                if region_height % 2 == 1
-                else region_height - 1
-            )
-
-        if kernel_size < 3:
-            return
-
-        blurred_region = cv2.GaussianBlur(
-            face_region,
-            (
-                kernel_size,
-                kernel_size,
-            ),
-            0,
-        )
-
-        frame[
-            y1:y2,
-            x1:x2,
-        ] = blurred_region
 
     def reset(self):
         """清除所有歷史隱私區域。"""
