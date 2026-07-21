@@ -1,5 +1,6 @@
 from ai_video.renderer.base_renderer import BaseRenderer
 from ai_video.renderer.blur_renderer import BlurRenderer
+from ai_video.renderer.debug_renderer import DebugRenderer
 from ai_video.renderer.pixelate_renderer import PixelateRenderer
 from ai_video.renderer.solid_renderer import SolidRenderer
 
@@ -8,6 +9,7 @@ _RENDERERS = {
     "blur": BlurRenderer,
     "pixelate": PixelateRenderer,
     "solid": SolidRenderer,
+    "debug": DebugRenderer,
 }
 
 
@@ -49,6 +51,14 @@ class RendererFactory:
 
         if renderer_type == "solid":
             return renderer_class()
+
+        if renderer_type == "debug":
+            return renderer_class(
+                line_thickness=kwargs.get(
+                    "line_thickness",
+                    2,
+                ),
+            )
 
         raise ValueError(
             f"未知 Renderer：{renderer_type}"
