@@ -2,9 +2,9 @@
 """
 AI-Video Pipeline Benchmark Tool.
 
-Version 0.5C benchmarks face detection across multiple video frames,
-saves a debug image, prints a benchmark summary, and exports per-frame
-results to CSV.
+Version 0.6 benchmarks face detection and face tracking across multiple
+video frames, saves a debug image, prints a benchmark summary, and exports
+per-frame results to CSV.
 """
 
 from __future__ import annotations
@@ -60,38 +60,57 @@ class DetectionResult:
 
 
 @dataclass(frozen=True)
+class TrackingResult:
+    """Store one-frame face tracking results."""
+
+    tracked_faces: Any
+    elapsed_seconds: float
+
+
+@dataclass(frozen=True)
 class BenchmarkRecord:
     """Store one frame's benchmark data."""
 
     frame_index: int
     face_count: int
-    elapsed_seconds: float
+    track_count: int
+    detection_seconds: float
+    tracking_seconds: float
 
     @property
-    def elapsed_milliseconds(self) -> float:
+    def detection_milliseconds(self) -> float:
         """Return elapsed detection time in milliseconds."""
 
-        return self.elapsed_seconds * 1000.0
+        return self.detection_seconds * 1000.0
+
+    @property
+    def tracking_milliseconds(self) -> float:
+        """Return elapsed tracking time in milliseconds."""
+
+        return self.tracking_seconds * 1000.0
 
 
 @dataclass
 class BenchmarkStatistics:
-    """Collect and summarize detector benchmark results."""
+    """Collect and summarize pipeline benchmark results."""
 
     records: list[BenchmarkRecord] = field(default_factory=list)
 
     def add(
         self,
         frame_index: int,
-        result: DetectionResult,
+        detection_result: DetectionResult,
+        tracking_result: TrackingResult,
     ) -> None:
-        """Add one detection result to the statistics."""
+        """Add one frame's detection and tracking results."""
 
         self.records.append(
             BenchmarkRecord(
                 frame_index=frame_index,
-                face_count=len(result.detections),
-                elapsed_seconds=result.elapsed_seconds,
+                face_count=len(detection_result.detections),
+                track_count=len(tracking_result.tracked_faces),
+                detection_seconds=detection_result.elapsed_seconds,
+                tracking_seconds=tracking_result.elapsed_seconds,
             )
         )
 
@@ -108,36 +127,75 @@ class BenchmarkStatistics:
         return sum(record.face_count for record in self.records)
 
     @property
-    def average_milliseconds(self) -> float:
+    def tracks_total(self) -> int:
+        """Return the total number of tracked face regions."""
+
+        return sum(record.track_count for record in self.records)
+
+    @property
+    def detector_average_milliseconds(self) -> float:
         """Return average detection time in milliseconds."""
 
         if not self.records:
             return 0.0
 
         return sum(
-            record.elapsed_milliseconds for record in self.records
+            record.detection_milliseconds for record in self.records
         ) / len(self.records)
 
     @property
-    def minimum_milliseconds(self) -> float:
+    def detector_minimum_milliseconds(self) -> float:
         """Return minimum detection time in milliseconds."""
 
         if not self.records:
             return 0.0
 
         return min(
-            record.elapsed_milliseconds for record in self.records
+            record.detection_milliseconds for record in self.records
         )
 
     @property
-    def maximum_milliseconds(self) -> float:
+    def detector_maximum_milliseconds(self) -> float:
         """Return maximum detection time in milliseconds."""
 
         if not self.records:
             return 0.0
 
         return max(
-            record.elapsed_milliseconds for record in self.records
+            record.detection_milliseconds for record in self.records
+        )
+
+    @property
+    def tracker_average_milliseconds(self) -> float:
+        """Return average tracking time in milliseconds."""
+
+        if not self.records:
+            return 0.0
+
+        return sum(
+            record.tracking_milliseconds for record in self.records
+        ) / len(self.records)
+
+    @property
+    def tracker_minimum_milliseconds(self) -> float:
+        """Return minimum tracking time in milliseconds."""
+
+        if not self.records:
+            return 0.0
+
+        return min(
+            record.tracking_milliseconds for record in self.records
+        )
+
+    @property
+    def tracker_maximum_milliseconds(self) -> float:
+        """Return maximum tracking time in milliseconds."""
+
+        if not self.records:
+            return 0.0
+
+        return max(
+            record.tracking_milliseconds for record in self.records
         )
 
 
@@ -146,9 +204,9 @@ def create_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(
         description=(
-            "Initialize the AI-Video pipeline, benchmark face detection "
-            "across multiple video frames, save a debug image, print a "
-            "summary, and export per-frame results to CSV."
+            "Initialize the AI-Video pipeline, benchmark face detection and "
+            "tracking across multiple video frames, save a debug image, "
+            "print a summary, and export per-frame results to CSV."
         ),
     )
 
@@ -187,7 +245,7 @@ def print_header() -> None:
 
     print("=" * 50)
     print("AI-Video Pipeline Benchmark")
-    print("Version 0.5C")
+    print("Version 0.6")
     print("=" * 50)
 
 
@@ -289,18 +347,41 @@ def detect_faces(detector: Any, frame: Any) -> DetectionResult:
     )
 
 
-def print_frame_detection_information(
-    frame_index: int,
-    result: DetectionResult,
-) -> None:
-    """Print one-frame face detection information."""
+def track_faces(
+    tracker: Any,
+    detections: Any,
+) -> TrackingResult:
+    """Track faces in one frame and measure elapsed time."""
 
-    elapsed_milliseconds = result.elapsed_seconds * 1000.0
+    started_at = perf_counter()
+    tracked_faces = tracker.track(detections)
+    elapsed_seconds = perf_counter() - started_at
+
+    if tracked_faces is None:
+        raise RuntimeError("The tracker returned no tracking result.")
+
+    return TrackingResult(
+        tracked_faces=tracked_faces,
+        elapsed_seconds=elapsed_seconds,
+    )
+
+
+def print_frame_benchmark_information(
+    frame_index: int,
+    detection_result: DetectionResult,
+    tracking_result: TrackingResult,
+) -> None:
+    """Print one-frame detection and tracking information."""
+
+    detector_ms = detection_result.elapsed_seconds * 1000.0
+    tracker_ms = tracking_result.elapsed_seconds * 1000.0
 
     print(
         f"Frame {frame_index:5d} | "
-        f"Faces: {len(result.detections):2d} | "
-        f"{elapsed_milliseconds:.2f} ms"
+        f"Faces: {len(detection_result.detections):2d} | "
+        f"Detector: {detector_ms:8.2f} ms | "
+        f"Tracker: {tracker_ms:7.2f} ms | "
+        f"Tracks: {len(tracking_result.tracked_faces):2d}"
     )
 
 
@@ -375,7 +456,9 @@ def save_csv(
             (
                 "frame_index",
                 "faces",
-                "elapsed_ms",
+                "tracks",
+                "detector_ms",
+                "tracker_ms",
             )
         )
 
@@ -384,7 +467,9 @@ def save_csv(
                 (
                     record.frame_index,
                     record.face_count,
-                    f"{record.elapsed_milliseconds:.4f}",
+                    record.track_count,
+                    f"{record.detection_milliseconds:.4f}",
+                    f"{record.tracking_milliseconds:.4f}",
                 )
             )
 
@@ -399,23 +484,46 @@ def print_csv_information(output_path: Path) -> None:
 
 
 def print_benchmark_summary(statistics: BenchmarkStatistics) -> None:
-    """Print the detector benchmark summary."""
+    """Print the detection and tracking benchmark summary."""
 
     print()
-    print("=" * 40)
+    print("=" * 44)
     print("Benchmark Summary")
-    print("=" * 40)
-    print(f"Frames Tested : {statistics.frames_tested}")
-    print(f"Faces Total   : {statistics.faces_total}")
+    print("=" * 44)
+    print(f"Frames Tested    : {statistics.frames_tested}")
+    print(f"Faces Total      : {statistics.faces_total}")
+    print(f"Tracks Total     : {statistics.tracks_total}")
     print()
-    print(f"Average Time  : {statistics.average_milliseconds:.2f} ms")
-    print(f"Minimum Time  : {statistics.minimum_milliseconds:.2f} ms")
-    print(f"Maximum Time  : {statistics.maximum_milliseconds:.2f} ms")
-    print("=" * 40)
+    print(
+        f"Detector Average : "
+        f"{statistics.detector_average_milliseconds:.2f} ms"
+    )
+    print(
+        f"Detector Minimum : "
+        f"{statistics.detector_minimum_milliseconds:.2f} ms"
+    )
+    print(
+        f"Detector Maximum : "
+        f"{statistics.detector_maximum_milliseconds:.2f} ms"
+    )
+    print()
+    print(
+        f"Tracker Average  : "
+        f"{statistics.tracker_average_milliseconds:.2f} ms"
+    )
+    print(
+        f"Tracker Minimum  : "
+        f"{statistics.tracker_minimum_milliseconds:.2f} ms"
+    )
+    print(
+        f"Tracker Maximum  : "
+        f"{statistics.tracker_maximum_milliseconds:.2f} ms"
+    )
+    print("=" * 44)
 
 
 def main() -> int:
-    """Benchmark multi-frame detection and export results."""
+    """Benchmark multi-frame detection and tracking."""
 
     parser = create_parser()
     args = parser.parse_args()
@@ -457,14 +565,21 @@ def main() -> int:
                 frame=frame,
             )
 
-            statistics.add(
-                frame_index=frame_index,
-                result=detection_result,
+            tracking_result = track_faces(
+                tracker=pipeline.tracker,
+                detections=detection_result.detections,
             )
 
-            print_frame_detection_information(
+            statistics.add(
                 frame_index=frame_index,
-                result=detection_result,
+                detection_result=detection_result,
+                tracking_result=tracking_result,
+            )
+
+            print_frame_benchmark_information(
+                frame_index=frame_index,
+                detection_result=detection_result,
+                tracking_result=tracking_result,
             )
 
             if not first_saved:
