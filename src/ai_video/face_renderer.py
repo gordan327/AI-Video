@@ -4,7 +4,9 @@ from ai_video.face import Face
 from ai_video.privacy_region import PrivacyRegion
 from ai_video.renderer.blur_renderer import BlurRenderer
 from ai_video.renderer.renderer_factory import RendererFactory
-
+from ai_video.temporal_region_cache import (
+    TemporalRegionCache,
+)
 
 class FaceRenderer:
     """負責對影像中的人臉區域進行模糊處理。"""
@@ -45,7 +47,9 @@ class FaceRenderer:
         #     "box": (x1, y1, x2, y2),
         #     "remaining": 剩餘保留幀數,
         # }
-        self.region_cache: dict[int, dict] = {}
+        self.region_cache = TemporalRegionCache(
+            hold_frames=self.temporal_hold_frames,
+        )
 
     @staticmethod
     def _normalize_kernel_size(value: int) -> int:
@@ -93,49 +97,19 @@ class FaceRenderer:
             if face.track_id is not None:
                 seen_track_ids.add(face.track_id)
 
-                self.region_cache[face.track_id] = {
-                    "box": box_tuple,
-                    "remaining": self.temporal_hold_frames,
-                }
+                self.region_cache.update(
+                    track_id=face.track_id,
+                    box=box_tuple,
+                )
 
         # 再處理本影格暫時消失的 Track
-        expired_track_ids = []
-
-        for track_id, cached in self.region_cache.items():
-            if track_id in seen_track_ids:
-                continue
-
-            remaining = int(
-                cached.get(
-                    "remaining",
-                    0,
-                )
+        for box in self.region_cache.get_held_boxes(
+            seen_track_ids,
+        ):
+            self._blur_box(
+                frame,
+                box,
             )
-
-            if remaining <= 0:
-                expired_track_ids.append(track_id)
-                continue
-
-            cached_box = cached.get("box")
-
-            if cached_box is not None:
-                self._blur_box(
-                    frame,
-                    cached_box,
-                )
-
-            cached["remaining"] = remaining - 1
-
-            if cached["remaining"] <= 0:
-                expired_track_ids.append(track_id)
-
-        for track_id in expired_track_ids:
-            self.region_cache.pop(
-                track_id,
-                None,
-            )
-
-        return frame
 
     def _blur_box(
         self,
@@ -143,7 +117,7 @@ class FaceRenderer:
         box: tuple[int, int, int, int],
     ):
         """將指定區域交由目前的 Renderer 處理。"""
-        
+
         self.effect_renderer.render(
             frame,
             box,
@@ -152,4 +126,4 @@ class FaceRenderer:
     def reset(self):
         """清除所有歷史隱私區域。"""
 
-        self.region_cache.clear()
+        self.region_cache.reset()
