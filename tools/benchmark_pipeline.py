@@ -2,14 +2,15 @@
 """
 AI-Video Pipeline Benchmark Tool.
 
-Version 0.5B initializes the main pipeline components, benchmarks face
-detection across multiple video frames, saves a debug image, and prints
-a benchmark summary.
+Version 0.5C benchmarks face detection across multiple video frames,
+saves a debug image, prints a benchmark summary, and exports per-frame
+results to CSV.
 """
 
 from __future__ import annotations
 
 import argparse
+import csv
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -22,6 +23,7 @@ import cv2
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_PATH = PROJECT_ROOT / "src"
 DEBUG_IMAGE_PATH = PROJECT_ROOT / "benchmark_detect.jpg"
+CSV_OUTPUT_PATH = PROJECT_ROOT / "benchmark.csv"
 
 if str(SRC_PATH) not in sys.path:
     sys.path.insert(0, str(SRC_PATH))
@@ -57,47 +59,86 @@ class DetectionResult:
     elapsed_seconds: float
 
 
+@dataclass(frozen=True)
+class BenchmarkRecord:
+    """Store one frame's benchmark data."""
+
+    frame_index: int
+    face_count: int
+    elapsed_seconds: float
+
+    @property
+    def elapsed_milliseconds(self) -> float:
+        """Return elapsed detection time in milliseconds."""
+
+        return self.elapsed_seconds * 1000.0
+
+
 @dataclass
 class BenchmarkStatistics:
     """Collect and summarize detector benchmark results."""
 
-    frames_tested: int = 0
-    faces_total: int = 0
-    elapsed_seconds: list[float] = field(default_factory=list)
+    records: list[BenchmarkRecord] = field(default_factory=list)
 
-    def add(self, result: DetectionResult) -> None:
+    def add(
+        self,
+        frame_index: int,
+        result: DetectionResult,
+    ) -> None:
         """Add one detection result to the statistics."""
 
-        self.frames_tested += 1
-        self.faces_total += len(result.detections)
-        self.elapsed_seconds.append(result.elapsed_seconds)
+        self.records.append(
+            BenchmarkRecord(
+                frame_index=frame_index,
+                face_count=len(result.detections),
+                elapsed_seconds=result.elapsed_seconds,
+            )
+        )
+
+    @property
+    def frames_tested(self) -> int:
+        """Return the number of benchmarked frames."""
+
+        return len(self.records)
+
+    @property
+    def faces_total(self) -> int:
+        """Return the total number of detected faces."""
+
+        return sum(record.face_count for record in self.records)
 
     @property
     def average_milliseconds(self) -> float:
         """Return average detection time in milliseconds."""
 
-        if not self.elapsed_seconds:
+        if not self.records:
             return 0.0
 
-        return sum(self.elapsed_seconds) / len(self.elapsed_seconds) * 1000.0
+        return sum(
+            record.elapsed_milliseconds for record in self.records
+        ) / len(self.records)
 
     @property
     def minimum_milliseconds(self) -> float:
         """Return minimum detection time in milliseconds."""
 
-        if not self.elapsed_seconds:
+        if not self.records:
             return 0.0
 
-        return min(self.elapsed_seconds) * 1000.0
+        return min(
+            record.elapsed_milliseconds for record in self.records
+        )
 
     @property
     def maximum_milliseconds(self) -> float:
         """Return maximum detection time in milliseconds."""
 
-        if not self.elapsed_seconds:
+        if not self.records:
             return 0.0
 
-        return max(self.elapsed_seconds) * 1000.0
+        return max(
+            record.elapsed_milliseconds for record in self.records
+        )
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -106,8 +147,8 @@ def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Initialize the AI-Video pipeline, benchmark face detection "
-            "across multiple video frames, save a debug image, and print "
-            "a benchmark summary."
+            "across multiple video frames, save a debug image, print a "
+            "summary, and export per-frame results to CSV."
         ),
     )
 
@@ -131,6 +172,13 @@ def create_parser() -> argparse.ArgumentParser:
         help="Number of frames to benchmark.",
     )
 
+    parser.add_argument(
+        "--csv",
+        type=Path,
+        default=CSV_OUTPUT_PATH,
+        help="Path to the CSV output file.",
+    )
+
     return parser
 
 
@@ -139,7 +187,7 @@ def print_header() -> None:
 
     print("=" * 50)
     print("AI-Video Pipeline Benchmark")
-    print("Version 0.5B")
+    print("Version 0.5C")
     print("=" * 50)
 
 
@@ -281,12 +329,20 @@ def save_debug_image(
             ),
         )
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
 
-    saved = cv2.imwrite(str(output_path), debug_frame)
+    saved = cv2.imwrite(
+        str(output_path),
+        debug_frame,
+    )
 
     if not saved:
-        raise RuntimeError(f"Unable to save debug image: {output_path}")
+        raise RuntimeError(
+            f"Unable to save debug image: {output_path}"
+        )
 
 
 def print_debug_image_information(output_path: Path) -> None:
@@ -295,6 +351,50 @@ def print_debug_image_information(output_path: Path) -> None:
     print()
     print("Debug Image")
     print("-----------")
+    print(f"Output : {output_path}")
+
+
+def save_csv(
+    statistics: BenchmarkStatistics,
+    output_path: Path,
+) -> None:
+    """Save per-frame benchmark results to CSV."""
+
+    output_path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    with output_path.open(
+        "w",
+        encoding="utf-8",
+        newline="",
+    ) as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerow(
+            (
+                "frame_index",
+                "faces",
+                "elapsed_ms",
+            )
+        )
+
+        for record in statistics.records:
+            writer.writerow(
+                (
+                    record.frame_index,
+                    record.face_count,
+                    f"{record.elapsed_milliseconds:.4f}",
+                )
+            )
+
+
+def print_csv_information(output_path: Path) -> None:
+    """Print CSV output information."""
+
+    print()
+    print("CSV Report")
+    print("----------")
     print(f"Output : {output_path}")
 
 
@@ -315,7 +415,7 @@ def print_benchmark_summary(statistics: BenchmarkStatistics) -> None:
 
 
 def main() -> int:
-    """Benchmark multi-frame detection and print a summary."""
+    """Benchmark multi-frame detection and export results."""
 
     parser = create_parser()
     args = parser.parse_args()
@@ -332,9 +432,13 @@ def main() -> int:
 
     try:
         reader.open()
+
         print_video_information(reader)
 
-        pipeline = initialize_pipeline(config_path=args.config)
+        pipeline = initialize_pipeline(
+            config_path=args.config,
+        )
+
         print_pipeline_information(pipeline)
 
         statistics = BenchmarkStatistics()
@@ -353,7 +457,10 @@ def main() -> int:
                 frame=frame,
             )
 
-            statistics.add(detection_result)
+            statistics.add(
+                frame_index=frame_index,
+                result=detection_result,
+            )
 
             print_frame_detection_information(
                 frame_index=frame_index,
@@ -370,12 +477,21 @@ def main() -> int:
                 first_saved = True
 
         if statistics.frames_tested == 0:
-            raise RuntimeError("No video frames were available for benchmarking.")
+            raise RuntimeError(
+                "No video frames were available for benchmarking."
+            )
 
         print_benchmark_summary(statistics)
 
+        save_csv(
+            statistics=statistics,
+            output_path=args.csv,
+        )
+        print_csv_information(args.csv)
+
     except (
         FileNotFoundError,
+        OSError,
         RuntimeError,
         TypeError,
         ValueError,
