@@ -2,8 +2,8 @@
 """
 AI-Video Pipeline Benchmark Tool.
 
-Version 0.2 initializes the video reader, all main pipeline components,
-and verifies that the first video frame can be read successfully.
+Version 0.3 initializes the main pipeline components, reads the first
+video frame, and measures face detection performance on that frame.
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ import argparse
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
 
@@ -44,11 +45,22 @@ class PipelineComponents:
     renderer_type: str
 
 
+@dataclass(frozen=True)
+class DetectionResult:
+    """Store first-frame face detection results."""
+
+    detections: Any
+    elapsed_seconds: float
+
+
 def create_parser() -> argparse.ArgumentParser:
     """Create the command-line argument parser."""
 
     parser = argparse.ArgumentParser(
-        description="Initialize the AI-Video processing pipeline.",
+        description=(
+            "Initialize the AI-Video pipeline and benchmark "
+            "face detection on the first video frame."
+        ),
     )
 
     parser.add_argument(
@@ -72,7 +84,7 @@ def print_header() -> None:
 
     print("=" * 50)
     print("AI-Video Pipeline Benchmark")
-    print("Version 0.2")
+    print("Version 0.3")
     print("=" * 50)
 
 
@@ -214,8 +226,46 @@ def print_first_frame_information(
     print(f"Data Type   : {frame.dtype}")
 
 
+def detect_faces(
+    detector: Any,
+    frame: Any,
+) -> DetectionResult:
+    """Detect faces in one frame and measure elapsed time."""
+
+    started_at = perf_counter()
+
+    detections = detector.detect(frame)
+
+    elapsed_seconds = perf_counter() - started_at
+
+    if detections is None:
+        raise RuntimeError(
+            "The detector returned no detection result."
+        )
+
+    return DetectionResult(
+        detections=detections,
+        elapsed_seconds=elapsed_seconds,
+    )
+
+
+def print_detection_information(
+    result: DetectionResult,
+) -> None:
+    """Print first-frame face detection information."""
+
+    detection_count = len(result.detections)
+    elapsed_milliseconds = result.elapsed_seconds * 1000.0
+
+    print()
+    print("Face Detection")
+    print("--------------")
+    print(f"Faces Found : {detection_count}")
+    print(f"Elapsed     : {elapsed_milliseconds:.2f} ms")
+
+
 def main() -> int:
-    """Verify pipeline initialization and first-frame reading."""
+    """Benchmark face detection on the first video frame."""
 
     parser = create_parser()
     args = parser.parse_args()
@@ -243,6 +293,15 @@ def main() -> int:
         print_first_frame_information(
             reader,
             frame,
+        )
+
+        detection_result = detect_faces(
+            detector=pipeline.detector,
+            frame=frame,
+        )
+
+        print_detection_information(
+            detection_result,
         )
 
     except (
