@@ -183,22 +183,39 @@ def print_pipeline_information(
     )
 
 
+def read_first_frame(
+    reader: VideoReader,
+) -> Any:
+    """Read the first frame from the video."""
+
+    success, frame = reader.read()
+
+    if not success or frame is None:
+        raise RuntimeError(
+            "Unable to read the first frame."
+        )
+
+    return frame
+
+
 def print_first_frame_information(
     reader: VideoReader,
     frame: Any,
 ) -> None:
     """Print information about the first frame."""
 
+    frame_index = reader.current_frame_index - 1
+
     print()
     print("First Frame")
     print("-----------")
-    print(f"Frame Index : {reader.current_frame_index - 1}")
+    print(f"Frame Index : {frame_index}")
     print(f"Shape       : {frame.shape}")
     print(f"Data Type   : {frame.dtype}")
 
 
 def main() -> int:
-    """Run pipeline initialization verification."""
+    """Verify pipeline initialization and first-frame reading."""
 
     parser = create_parser()
     args = parser.parse_args()
@@ -221,12 +238,7 @@ def main() -> int:
 
         print_pipeline_information(pipeline)
 
-        success, frame = reader.read()
-
-        if not success:
-            raise RuntimeError(
-                "Unable to read the first frame."
-            )
+        frame = read_first_frame(reader)
 
         print_first_frame_information(
             reader,
