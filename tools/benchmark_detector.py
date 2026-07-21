@@ -8,6 +8,7 @@ Future versions will compare detection quality and speed.
 
 from __future__ import annotations
 
+import time
 import argparse
 import sys
 from pathlib import Path
@@ -103,12 +104,18 @@ def main() -> int:
         print(f"Class      : {detector.__class__.__name__}")
         print("Status     : Initialized")
 
+        start_time = time.perf_counter()
+
         faces = detector.detect(frame)
+
+        elapsed_time = time.perf_counter() - start_time
 
         print()
         print("Detection Result")
         print("----------------")
         print(f"Faces detected : {len(faces)}")
+        print(f"Elapsed time   : {elapsed_time * 1000:.2f} ms")
+        print(f"FPS Equivalent : {1 / elapsed_time if elapsed_time > 0 else 0   :.2f}")
 
     except (
         FileNotFoundError,
