@@ -2,7 +2,7 @@
 """
 AI-Video Pipeline Benchmark Tool.
 
-Version 0.4A initializes the main pipeline components, reads the first
+Version 0.5A initializes the main pipeline components, reads the first
 video frame, measures face detection performance, and saves a debug
 image with detected face bounding boxes.
 """
@@ -80,6 +80,13 @@ def create_parser() -> argparse.ArgumentParser:
         help="Path to a YAML configuration file.",
     )
 
+    parser.add_argument(
+        "--frames",
+        type=int,
+        default=10,
+        help="Number of frames to benchmark.",
+    )
+
     return parser
 
 
@@ -88,7 +95,7 @@ def print_header() -> None:
 
     print("=" * 50)
     print("AI-Video Pipeline Benchmark")
-    print("Version 0.4A")
+    print("Version 0.5A")
     print("=" * 50)
 
 
@@ -344,31 +351,34 @@ def main() -> int:
 
         print_pipeline_information(pipeline)
 
-        frame = read_first_frame(reader)
+        first_saved = False
 
-        print_first_frame_information(
-            reader,
-            frame,
-        )
+        for _ in range(args.frames):
+            success, frame = reader.read()
+            if not success or frame is None:
+                break
 
-        detection_result = detect_faces(
-            detector=pipeline.detector,
-            frame=frame,
-        )
+            frame_index = reader.current_frame_index - 1
 
-        print_detection_information(
-            detection_result,
-        )
+            detection_result = detect_faces(
+                detector=pipeline.detector,
+                frame=frame,
+            )
 
-        save_debug_image(
-            frame=frame,
-            detections=detection_result.detections,
-            output_path=DEBUG_IMAGE_PATH,
-        )
+            print(
+                f"Frame {frame_index:5d} | "
+                f"Faces: {len(detection_result.detections):2d} | "
+                f"{detection_result.elapsed_seconds*1000:.2f} ms"
+            )
 
-        print_debug_image_information(
-            DEBUG_IMAGE_PATH,
-        )
+            if not first_saved:
+                save_debug_image(
+                    frame=frame,
+                    detections=detection_result.detections,
+                    output_path=DEBUG_IMAGE_PATH,
+                )
+                print_debug_image_information(DEBUG_IMAGE_PATH)
+                first_saved = True
 
     except (
         FileNotFoundError,
