@@ -44,6 +44,19 @@ input/*.mov
 input/*.avi
 input/*.mkv
 
+# Local test videos
+videos/*.mp4
+videos/*.mov
+videos/*.avi
+videos/*.mkv
+videos/*.jpg
+videos/*.jpeg
+videos/*.png
+
+# 保留 videos 資料夾
+!videos/.gitkeep
+!videos/README.md
+
 # 保留 input 資料夾
 !input/.gitkeep
 
