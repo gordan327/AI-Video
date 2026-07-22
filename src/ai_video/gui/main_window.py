@@ -38,7 +38,7 @@ class MainWindow(QMainWindow):
         self.settings = QSettings(
             "AI-Video",
             "AI-Video",
-)
+        )
 
         self.setWindowTitle(f"AI-Video {__version__}")
         self.resize(900, 650)
@@ -209,12 +209,7 @@ class MainWindow(QMainWindow):
         settings_row.addStretch()
 
         layout.addLayout(settings_row)
-        self.restore_combo_setting(
-            self.renderer_combo,
-            "renderer",
-            "blur",
-        )
-
+    
         # 處理進度
         progress_title = QLabel("處理進度")
         progress_title.setStyleSheet(
