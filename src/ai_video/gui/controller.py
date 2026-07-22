@@ -1,34 +1,33 @@
+from datetime import datetime
 from pathlib import Path
+from time import perf_counter
 
 from PySide6.QtCore import QObject, QSettings, QThread, Signal, Slot
 from PySide6.QtWidgets import QFileDialog, QMessageBox
+
 from ai_video.config_manager import ConfigManager
-from ai_video.gui.worker import Worker
 from ai_video.gui.preferences_dialog import PreferencesDialog
+from ai_video.gui.processing_configuration import ProcessingConfiguration
+from ai_video.gui.processing_job import ProcessingJob
+from ai_video.gui.processing_state_manager import ProcessingStateManager
+from ai_video.gui.video_path_manager import VideoPathManager
+from ai_video.gui.worker import Worker
 from ai_video.logger import Logger
-from ai_video.gui.video_path_manager import (
-    VideoPathManager,
-)
-from ai_video.gui.processing_configuration import (
-    ProcessingConfiguration,
-)
-from ai_video.gui.processing_job import (
-    ProcessingJob,
-)
-from ai_video.gui.processing_state_manager import (
-    ProcessingStateManager,
-)
+
 
 class Controller(QObject):
     """處理 GUI 操作與影片處理流程。"""
 
     log_received = Signal(str)
-    
+
     VIDEO_FILTER = (
         "影片檔案 (*.mp4 *.mov *.avi *.mkv *.m4v);;"
         "MP4 影片 (*.mp4);;"
         "所有檔案 (*)"
     )
+
+    SESSION_SEPARATOR = "=" * 50
+    SESSION_DETAIL_SEPARATOR = "-" * 50
 
     def __init__(self, window):
         super().__init__()
@@ -43,6 +42,8 @@ class Controller(QObject):
         self.thread = None
         self.worker = None
         self.config = ConfigManager()
+
+        self.processing_started_at = None
 
         self.connect_signals()
 
@@ -59,7 +60,6 @@ class Controller(QObject):
         )
 
         Logger.info("AI-Video 已啟動")
-
 
     def add_log(
         self,
@@ -81,7 +81,6 @@ class Controller(QObject):
         )
 
         log_method(message)
-
 
     def connect_signals(self):
         """連接畫面元件與控制函式。"""
@@ -197,7 +196,9 @@ class Controller(QObject):
     def select_output_video(self):
         """指定輸出影片的位置。"""
 
-        current_output = self.window.output_edit.text().strip()
+        current_output = (
+            self.window.output_edit.text().strip()
+        )
 
         output_directory = self.settings.value(
             "paths/output_directory",
@@ -233,12 +234,18 @@ class Controller(QObject):
 
         output_path = (
             VideoPathManager.build_output_path(
-            filename
+                filename
             )
         )
 
-        self.window.output_edit.setText(str(output_path))
-        self.window.status_label.setText("已指定輸出影片")
+        self.window.output_edit.setText(
+            str(output_path)
+        )
+
+        self.window.status_label.setText(
+            "已指定輸出影片"
+        )
+
         self.add_log(
             f"已指定輸出影片：{output_path}"
         )
@@ -297,7 +304,7 @@ class Controller(QObject):
             "偏好設定已儲存",
             "SUCCESS",
         )
-        
+
     def start_processing(self):
         """檢查設定並啟動背景影片處理。"""
 
@@ -309,8 +316,12 @@ class Controller(QObject):
             )
             return
 
-        input_text = self.window.input_edit.text().strip()
-        output_text = self.window.output_edit.text().strip()
+        input_text = (
+            self.window.input_edit.text().strip()
+        )
+        output_text = (
+            self.window.output_edit.text().strip()
+        )
 
         if not input_text:
             QMessageBox.warning(
@@ -340,7 +351,10 @@ class Controller(QObject):
 
         output_path = Path(output_text)
 
-        if input_path.resolve() == output_path.resolve():
+        if (
+            input_path.resolve()
+            == output_path.resolve()
+        ):
             QMessageBox.warning(
                 self.window,
                 "輸出位置錯誤",
@@ -361,9 +375,15 @@ class Controller(QObject):
             )
             return
 
-        detector = self.window.detector_combo.currentData()
-        tracker = self.window.tracker_combo.currentData()
-        renderer = self.window.renderer_combo.currentData()
+        detector = (
+            self.window.detector_combo.currentData()
+        )
+        tracker = (
+            self.window.tracker_combo.currentData()
+        )
+        renderer = (
+            self.window.renderer_combo.currentData()
+        )
 
         if detector != "scrfd":
             QMessageBox.warning(
@@ -373,7 +393,13 @@ class Controller(QObject):
             )
             return
 
-        temp_output = VideoPathManager.build_temp_output_path(output_path)
+        temp_output = (
+            VideoPathManager
+            .build_temp_output_path(
+                output_path
+            )
+        )
+
         job = ProcessingJob(
             input_path=input_path,
             output_path=output_path,
@@ -390,38 +416,83 @@ class Controller(QObject):
             job=job,
         )
 
+        self.processing_started_at = perf_counter()
+
+        self.log_processing_session_start(
+            input_path=input_path,
+            output_path=output_path,
+        )
+
+        self.start_worker(config)
+
+    def log_processing_session_start(
+        self,
+        input_path: Path,
+        output_path: Path,
+    ):
+        """記錄影片處理工作階段的開始資訊。"""
+
+        started_time = datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+
         self.add_log("")
-
-        self.add_log("=" * 50)
-
-        self.add_log("開始新的影片處理工作")
-
-        self.add_log("=" * 50)
-
-        self.add_log(
-            f"開始處理影片：{input_path}"
-        )
-
-        self.add_log(
-            f"輸出位置：{output_path}"
-        )
-
+        self.add_log(self.SESSION_SEPARATOR)
+        self.add_log("AI-Video 影片處理工作")
+        self.add_log(self.SESSION_SEPARATOR)
+        self.add_log(f"開始時間：{started_time}")
+        self.add_log(f"輸入影片：{input_path}")
+        self.add_log(f"輸出影片：{output_path}")
         self.add_log(
             "偵測器："
             f"{self.window.detector_combo.currentText()}"
         )
-
         self.add_log(
             "追蹤器："
             f"{self.window.tracker_combo.currentText()}"
         )
-
         self.add_log(
             "處理方式："
             f"{self.window.renderer_combo.currentText()}"
         )
+        self.add_log(self.SESSION_DETAIL_SEPARATOR)
 
-        self.start_worker(config)
+    def log_processing_session_end(
+        self,
+        result: str,
+        level: str,
+    ):
+        """記錄影片處理工作階段的結束資訊。"""
+
+        finished_time = datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+
+        elapsed_seconds = self.get_processing_elapsed_seconds()
+
+        self.add_log(self.SESSION_DETAIL_SEPARATOR)
+        self.add_log(
+            f"處理結果：{result}",
+            level,
+        )
+        self.add_log(f"結束時間：{finished_time}")
+        self.add_log(
+            f"總耗時：{elapsed_seconds:.2f} 秒"
+        )
+        self.add_log(self.SESSION_SEPARATOR)
+
+        self.processing_started_at = None
+
+    def get_processing_elapsed_seconds(self) -> float:
+        """取得目前影片處理工作的經過秒數。"""
+
+        if self.processing_started_at is None:
+            return 0.0
+
+        return (
+            perf_counter()
+            - self.processing_started_at
+        )
 
     def start_worker(self, config):
         """建立背景執行緒與 Worker。"""
@@ -483,7 +554,9 @@ class Controller(QObject):
 
         self.window.reset_processing_stats()
         self.window.progress.setValue(0)
-        self.window.status_label.setText("正在準備影片處理……")
+        self.window.status_label.setText(
+            "正在準備影片處理……"
+        )
 
         self.thread.start()
 
@@ -494,7 +567,9 @@ class Controller(QObject):
             return
 
         self.window.stop_button.setEnabled(False)
-        self.window.status_label.setText("正在停止處理……")
+        self.window.status_label.setText(
+            "正在停止處理……"
+        )
 
         self.worker.request_stop()
 
@@ -516,11 +591,18 @@ class Controller(QObject):
         """影片處理完成。"""
 
         self.window.progress.setValue(100)
-        self.window.status_label.setText("影片處理完成")
-                
+        self.window.status_label.setText(
+            "影片處理完成"
+        )
+
         self.add_log(
             f"影片處理完成：{output_path}",
             "SUCCESS",
+        )
+
+        self.log_processing_session_end(
+            result="完成",
+            level="SUCCESS",
         )
 
         QMessageBox.information(
@@ -534,10 +616,18 @@ class Controller(QObject):
         """影片處理被使用者中止。"""
 
         self.window.progress.setValue(0)
-        self.window.status_label.setText("影片處理已停止")
+        self.window.status_label.setText(
+            "影片處理已停止"
+        )
+
         self.add_log(
             "使用者已停止影片處理",
             "WARNING",
+        )
+
+        self.log_processing_session_end(
+            result="使用者停止",
+            level="WARNING",
         )
 
         QMessageBox.information(
@@ -551,10 +641,18 @@ class Controller(QObject):
         """影片處理發生錯誤。"""
 
         self.window.progress.setValue(0)
-        self.window.status_label.setText("影片處理失敗")
+        self.window.status_label.setText(
+            "影片處理失敗"
+        )
+
         self.add_log(
             message,
             "ERROR",
+        )
+
+        self.log_processing_session_end(
+            result="失敗",
+            level="ERROR",
         )
 
         QMessageBox.critical(
