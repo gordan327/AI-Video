@@ -4,7 +4,7 @@ install:
 	pip install -e .
 
 test:
-	PYTHONPATH=src pytest -q
+	PYTHONPATH=src python -m pytest -q
 
 gui:
 	ai-video-gui

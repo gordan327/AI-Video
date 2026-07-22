@@ -57,7 +57,11 @@ def main():
     start_time = time.perf_counter()
 
     result = subprocess.run(
-        [sys.executable, "main.py"],
+        [
+            sys.executable,
+            "-m",
+            "ai_video.cli",
+        ],
         check=False,
     )
 
@@ -65,7 +69,8 @@ def main():
 
     if result.returncode != 0:
         raise RuntimeError(
-            f"main.py 執行失敗，返回碼：{result.returncode}"
+            "AI-Video CLI 執行失敗，"
+            f"返回碼：{result.returncode}"
         )
 
     processing_fps = (

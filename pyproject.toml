@@ -39,10 +39,13 @@ classifiers = [
 dependencies = [
     "opencv-python",
     "numpy",
+    "scipy",
     "pyyaml",
     "tqdm",
     "ffmpeg-python",
     "ultralytics",
+    "insightface",
+    "PySide6",
 ]
 
 [project.urls]
