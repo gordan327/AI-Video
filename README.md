@@ -1,16 +1,38 @@
 # AI-Video
 
-> Privacy-first AI Video Framework for Face Detection, Tracking and Anonymization
+> **Privacy-first AI Video Framework for Face Detection, Tracking and Anonymization**
 
-AI-Video is an open-source, plugin-based video privacy framework designed to automatically detect, track, and anonymize faces in videos while preserving the original video quality and audio.
+AI-Video is an open-source, plugin-based framework for privacy-preserving video processing.
 
-Originally created for educational activities, AI-Video emphasizes **privacy protection**, **maintainability**, and **extensibility**.
+Originally developed to protect the privacy of children during educational activities, AI-Video has evolved into a reusable framework for building AI-powered video anonymization applications.
+
+Unlike traditional face-blurring tools, AI-Video is designed with software engineering principles that emphasize long-term maintainability, extensibility, and reliability.
 
 ---
 
-# Features
+## Why AI-Video?
 
-AI-Video currently provides:
+Most video anonymization software focuses on producing blurred faces.
+
+AI-Video focuses on building a **privacy framework**.
+
+Its architecture allows developers to replace or extend every major component—including face detectors, trackers, renderers, and future AI modules—without modifying the processing pipeline.
+
+Core design principles:
+
+- 🔒 Privacy First
+- 🔌 Plugin Architecture
+- 🧩 Extensible Design
+- 🏗 Maintainable Codebase
+- ✅ Well Tested
+- 📚 Well Documented
+- ❤️ Open Source
+
+---
+
+## Features
+
+Current Version provides:
 
 - 🎯 SCRFD Face Detection
 - 🎯 ByteTrack Face Tracking
@@ -22,7 +44,7 @@ AI-Video currently provides:
 - 🎯 Solid Color Renderer
 - 🎯 Desktop GUI
 - 🎯 Command Line Interface (CLI)
-- 🎯 Plugin Architecture
+- 🎯 Plugin-based Architecture
 - 🎯 Factory Pattern
 - 🎯 YAML Configuration
 - 🎯 Automatic Audio Preservation (FFmpeg)
@@ -31,43 +53,16 @@ AI-Video currently provides:
 
 ---
 
-# Why AI-Video?
+# Quick Start
 
-Most video anonymization tools focus only on blurring faces.
-
-AI-Video is designed as a reusable **privacy framework**, making it easy to build new detectors, trackers, renderers, and future AI plugins without changing the core architecture.
-
-Core design principles:
-
-- Privacy First
-- Plugin-based
-- Extensible
-- Maintainable
-- Testable
-- Open Source
-
----
-
-# Requirements
-
-- Python 3.11 or newer
-- FFmpeg
-- macOS
-- Windows (planned for Version 1.x)
-- Linux (experimental)
-
----
-
-# Installation
-
-Clone the repository:
+Clone the repository.
 
 ```bash
 git clone https://github.com/gordan327/AI-Video.git
 cd AI-Video
 ```
 
-Create a virtual environment:
+Create a virtual environment.
 
 ```bash
 python -m venv .venv
@@ -87,47 +82,62 @@ Windows
 .venv\Scripts\activate
 ```
 
-Install AI-Video:
+Install AI-Video.
 
 ```bash
 pip install -e .
 ```
 
----
-
-# Quick Start
-
-## Desktop GUI
+Launch the desktop application.
 
 ```bash
 ai-video-gui
 ```
 
-Select
-
-1. Input Video
-2. Output Location
-3. Click **Start**
-
-The processed video will preserve:
-
-- original audio
-- original frame rate
-- original resolution
-
----
-
-## Command Line
+Or use the command line interface.
 
 ```bash
 ai-video --help
 ```
 
-Example:
+---
+
+# Requirements
+
+- Python 3.11 or newer
+- FFmpeg
+- macOS
+- Linux (experimental)
+- Windows support planned for Version 1.x
+
+---
+
+# Example Workflow
+
+Desktop GUI
+
+1. Select an input video.
+2. Choose an output location.
+3. Select the desired anonymization renderer.
+4. Click **Start**.
+
+AI-Video automatically:
+
+- detects faces,
+- tracks identities across frames,
+- preserves the original frame rate,
+- preserves the original resolution,
+- preserves the original audio,
+- exports the processed video.
+
+---
+
+# Command Line
+
+Example configuration:
 
 ```bash
-ai-video \
-    --config config/config.yaml
+ai-video --config config/config.yaml
 ```
 
 ---
@@ -148,84 +158,107 @@ src/
     └── ...
 ```
 
-Major design patterns:
+Architectural principles:
 
 - Layered Architecture
 - Factory Pattern
 - Plugin Architecture
 - Package Modularization
 
+The framework is intentionally designed so new AI components can be added with minimal changes to the existing codebase.
+
 ---
 
 # Documentation
 
-Complete documentation is available in:
-
-```
-docs/
-```
+Project documentation can be found in the `docs/` directory.
 
 Recommended reading order:
 
-1. vision.md
-2. architecture.md
-3. plugin.md
-4. roadmap.md
-5. release_plan_1.0.md
-6. project_status.md
+1. Vision
+2. Architecture
+3. Plugin Guide
+4. Roadmap
+5. Release Plan
+6. Project Status
+
+Main documents:
+
+- `docs/vision.md`
+- `docs/architecture.md`
+- `docs/plugin.md`
+- `docs/roadmap.md`
+- `docs/release_plan_1.0.md`
+- `docs/project_status.md`
 
 ---
 
 # Development
 
-Run all tests:
+Run all automated tests.
 
 ```bash
 make test
 ```
 
-Current test status:
+Current project status:
 
-```
-109 passed
-```
+- ✅ 109 automated tests
+- ✅ Editable installation
+- ✅ GUI application
+- ✅ CLI application
+- ✅ Plugin architecture
+- ✅ Continuous Integration
 
 ---
 
 # Roadmap
 
-AI-Video Version 1.0 focuses on:
+Version 1.0 focuses on building a stable, maintainable, and extensible privacy framework.
 
-- Stability
-- Documentation
-- Maintainability
-- Reliable Processing
-
-Future development includes:
+Future releases may include:
 
 - GPU acceleration
-- More detector plugins
-- More tracker plugins
+- Additional detector plugins
+- Additional tracker plugins
 - Batch processing
 - Automatic update checking
+- Performance optimization
+- More renderer plugins
 
-For detailed plans, see:
+---
+
+# Contributing
+
+Contributions are welcome.
+
+Please read:
 
 ```
-docs/roadmap.md
+CONTRIBUTING.md
 ```
+
+before submitting pull requests.
 
 ---
 
 # License
 
-MIT License
+This project is released under the MIT License.
+
+See:
+
+```
+LICENSE
+```
+
+for details.
 
 ---
 
 # Author
 
-KuoChing Hsieh
+**KuoChing Hsieh**
 
 Founder of AI-Video
 
@@ -233,21 +266,29 @@ Founder of AI-Video
 
 # Philosophy
 
-AI-Video is more than a face blurring tool.
+AI-Video is more than a face-blurring application.
 
-It is a privacy-first AI framework.
+It is a reusable privacy framework for AI-powered video processing.
 
 Every feature should be:
 
 - Reliable
 - Maintainable
-- Well tested
-- Well documented
+- Well Tested
+- Well Documented
 
 Documentation is considered part of the software.
 
 A feature is not complete until:
 
-- implementation is finished;
-- tests pass;
+- the implementation is finished;
+- automated tests pass;
 - documentation is updated.
+
+---
+
+## Acknowledgements
+
+AI-Video stands on the shoulders of many outstanding open-source projects, including OpenCV, InsightFace, ByteTrack, FFmpeg, PySide6, and the broader Python open-source community.
+
+Their work has made this project possible.
