@@ -1,12 +1,10 @@
-import cv2
-
 from ai_video.face import Face
 from ai_video.privacy_region import PrivacyRegion
-from ai_video.renderer.blur_renderer import BlurRenderer
 from ai_video.renderer.renderer_factory import RendererFactory
 from ai_video.temporal_region_cache import (
     TemporalRegionCache,
 )
+
 
 class FaceRenderer:
     """負責對影像中的人臉區域進行模糊處理。"""
@@ -110,6 +108,8 @@ class FaceRenderer:
                 frame,
                 box,
             )
+
+        return frame
 
     def _blur_box(
         self,
