@@ -47,13 +47,10 @@ dependencies = [
 
 [project.urls]
 
-Homepage = "https://github.com/your-org/AI-Video"
-
-Documentation = "https://github.com/your-org/AI-Video/tree/master/docs"
-
-Repository = "https://github.com/your-org/AI-Video"
-
-Issues = "https://github.com/your-org/AI-Video/issues"
+Homepage = "https://github.com/gordan327/AI-Video"
+Documentation = "https://github.com/gordan327/AI-Video/tree/main/docs"
+Repository = "https://github.com/gordan327/AI-Video"
+Issues = "https://github.com/gordan327/AI-Video/issues"
 
 [project.scripts]
 

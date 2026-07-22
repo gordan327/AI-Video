@@ -1,88 +1,79 @@
 # AI-Video
 
-AI-Video 是一套開放且可擴充的影片隱私保護引擎。
+> Privacy-first AI Video Framework for Face Detection, Tracking and Anonymization
 
-> AI-powered video privacy toolkit for educational activities.
+AI-Video is an open-source, plugin-based video privacy framework designed to automatically detect, track, and anonymize faces in videos while preserving the original video quality and audio.
 
-## 專案目標
-
-AI-Video 是一套專為教育活動設計的 AI 影片處理工具。
-
-第一階段目標：
-
-- 自動偵測影片中的人臉
-- 自動追蹤人臉
-- 自動模糊人臉
-- 保留原始畫質
-- 保留原始音訊
-- 一鍵完成處理
+Originally created for educational activities, AI-Video emphasizes **privacy protection**, **maintainability**, and **extensibility**.
 
 ---
 
-## 專案狀態
+# Features
 
-目前版本：
+AI-Video currently provides:
 
-Version 0.1（Planning）
-
----
-
-## 開發環境
-
-- macOS (Apple Silicon)
-- Python 3
-- OpenCV
-- YOLO
-- FFmpeg
-
----
-
-## 專案作者
-
-謝國清
-
-# AI-Video
-
-AI-Video 是一套以 Python 開發的影片隱私保護工具，專注於自動偵測、追蹤與匿名化影片中的人臉。
-
-目前支援高品質人臉模糊（Blur）與馬賽克（Pixelate），並採用可擴充（Plugin）的 Renderer 架構，方便未來加入更多隱私保護方式。
-
----
-
-## 主要功能
-
-- 🎯 SCRFD 人臉偵測
-- 🎯 ByteTrack 人臉追蹤
-- 🎯 Gaussian Blur 人臉模糊
-- 🎯 Pixelate（馬賽克）
+- 🎯 SCRFD Face Detection
+- 🎯 ByteTrack Face Tracking
 - 🎯 Smart Privacy Region
-- 🎯 Temporal Hold（短暫漏偵測仍持續保護）
+- 🎯 Temporal Region Cache
 - 🎯 Prediction Freeze
-- 🎯 GUI 操作介面
-- 🎯 即時處理資訊
-- 🎯 可設定偏好設定
-- 🎯 Plugin Renderer Architecture
-- 🎯 自動測試（pytest）
+- 🎯 Gaussian Blur Renderer
+- 🎯 Pixelate Renderer
+- 🎯 Solid Color Renderer
+- 🎯 Desktop GUI
+- 🎯 Command Line Interface (CLI)
+- 🎯 Plugin Architecture
+- 🎯 Factory Pattern
+- 🎯 YAML Configuration
+- 🎯 Automatic Audio Preservation (FFmpeg)
+- 🎯 109 Automated Tests
+- 🎯 GitHub Actions Continuous Integration
 
 ---
 
-## 系統需求
+# Why AI-Video?
 
-- Python 3.12+
+Most video anonymization tools focus only on blurring faces.
+
+AI-Video is designed as a reusable **privacy framework**, making it easy to build new detectors, trackers, renderers, and future AI plugins without changing the core architecture.
+
+Core design principles:
+
+- Privacy First
+- Plugin-based
+- Extensible
+- Maintainable
+- Testable
+- Open Source
+
+---
+
+# Requirements
+
+- Python 3.11 or newer
+- FFmpeg
 - macOS
-- Windows（預計支援）
+- Windows (planned for Version 1.x)
+- Linux (experimental)
 
 ---
 
-## 安裝
+# Installation
 
-建立虛擬環境：
+Clone the repository:
+
+```bash
+git clone https://github.com/gordan327/AI-Video.git
+cd AI-Video
+```
+
+Create a virtual environment:
 
 ```bash
 python -m venv .venv
 ```
 
-啟動：
+Activate it.
 
 macOS / Linux
 
@@ -92,11 +83,11 @@ source .venv/bin/activate
 
 Windows
 
-```bash
+```powershell
 .venv\Scripts\activate
 ```
 
-安裝套件：
+Install AI-Video:
 
 ```bash
 pip install -e .
@@ -104,90 +95,159 @@ pip install -e .
 
 ---
 
-## 執行 GUI
+# Quick Start
+
+## Desktop GUI
 
 ```bash
-PYTHONPATH=src python -m ai_video.gui.app
+ai-video-gui
+```
+
+Select
+
+1. Input Video
+2. Output Location
+3. Click **Start**
+
+The processed video will preserve:
+
+- original audio
+- original frame rate
+- original resolution
+
+---
+
+## Command Line
+
+```bash
+ai-video --help
+```
+
+Example:
+
+```bash
+ai-video \
+    --config config/config.yaml
 ```
 
 ---
 
-## 執行測試
+# Project Architecture
 
-```bash
-PYTHONPATH=src pytest
 ```
-
----
-
-## 專案架構
-
-```text
 src/
 └── ai_video/
-    ├── detector/
-    ├── tracker/
-    ├── renderer/
-    ├── gui/
     ├── config/
-    ├── processor.py
+    ├── detector/
+    ├── gui/
+    ├── renderer/
+    ├── tracker/
+    ├── tracking/
+    ├── utils/
+    ├── video/
     └── ...
 ```
 
----
+Major design patterns:
 
-## Renderer Plugin
-
-目前支援：
-
-- Blur
-- Pixelate
-
-未來規劃：
-
-- Solid Color
-- Emoji
-- Mosaic
-- AI Replace
+- Layered Architecture
+- Factory Pattern
+- Plugin Architecture
+- Package Modularization
 
 ---
 
-## Roadmap
+# Documentation
 
-### Version 0.6 Beta
+Complete documentation is available in:
 
-- Renderer Plugin
-- Pixelate Renderer
-- 自動測試
-- 中文 GUI
+```
+docs/
+```
 
-### Version 0.7
+Recommended reading order:
 
-- Detector Factory
-- Tracker Factory
-- Plugin Registry
-
-### Version 0.8
-
-- 更多 Renderer
-- 更完整 Preferences
-
-### Version 1.0
-
-- Plugin SDK
-- 自動載入 Renderer
-- 正式版發布
+1. vision.md
+2. architecture.md
+3. plugin.md
+4. roadmap.md
+5. release_plan_1.0.md
+6. project_status.md
 
 ---
 
-## License
+# Development
+
+Run all tests:
+
+```bash
+make test
+```
+
+Current test status:
+
+```
+109 passed
+```
+
+---
+
+# Roadmap
+
+AI-Video Version 1.0 focuses on:
+
+- Stability
+- Documentation
+- Maintainability
+- Reliable Processing
+
+Future development includes:
+
+- GPU acceleration
+- More detector plugins
+- More tracker plugins
+- Batch processing
+- Automatic update checking
+
+For detailed plans, see:
+
+```
+docs/roadmap.md
+```
+
+---
+
+# License
 
 MIT License
 
 ---
 
-## Author
+# Author
 
 KuoChing Hsieh
 
-AI-Video Project
+Founder of AI-Video
+
+---
+
+# Philosophy
+
+AI-Video is more than a face blurring tool.
+
+It is a privacy-first AI framework.
+
+Every feature should be:
+
+- Reliable
+- Maintainable
+- Well tested
+- Well documented
+
+Documentation is considered part of the software.
+
+A feature is not complete until:
+
+- implementation is finished;
+- tests pass;
+- documentation is updated.
