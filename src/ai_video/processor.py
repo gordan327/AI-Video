@@ -9,6 +9,9 @@ from ai_video.tracker.tracker_factory import (
 from ai_video.face_renderer import FaceRenderer
 from ai_video.model_manager import ModelManager
 from ai_video.processing_stats import ProcessingStats
+from ai_video.processing.frame_processor import (
+    FrameProcessor,
+)
 from ai_video.logger import Logger
 from ai_video.detector.detector_factory import DetectorFactory
 from ai_video.video.ffmpeg_processor import (
@@ -99,6 +102,12 @@ class VideoProcessor:
             ),
         )
         
+        self.frame_processor = FrameProcessor(
+            detector=self.detector,
+            tracker=self.tracker,
+            renderer=self.renderer,
+        )
+
         self.ffmpeg = FFmpegProcessor()
 
         self.detector_time = 0.0
@@ -386,145 +395,22 @@ class VideoProcessor:
         return 0
 
     def process_frame(self, frame):
-        """處理單一影格並記錄各模組耗時。"""
+        """委派 FrameProcessor 處理影格並累加模組耗時。"""
 
-        detector_start = perf_counter()
-
-        faces = self.detector.detect(frame)
+        frame, faces = self.frame_processor.process(
+            frame
+        )
 
         self.detector_time += (
-            perf_counter() - detector_start
+            self.frame_processor.detector_time
         )
-
-        tracker_start = perf_counter()
-
-        faces = self.tracker.track(faces)
-
         self.tracker_time += (
-            perf_counter() - tracker_start
+            self.frame_processor.tracker_time
         )
-
-        renderer_start = perf_counter()
-
-        frame = self.renderer.draw(
-            frame,
-            faces,
-        )
-
         self.renderer_time += (
-            perf_counter() - renderer_start
+            self.frame_processor.renderer_time
         )
 
         self.current_faces = faces
 
         return frame
-
-    def print_performance_report(
-        self,
-        frame_count: int,
-        processing_time: float,
-    ):
-        """輸出各模組效能統計。"""
-
-        if frame_count == 0:
-            print("沒有可供統計的影格。")
-            return
-
-        measured_time = (
-            self.detector_time
-            + self.tracker_time
-            + self.renderer_time
-            + self.writer_time
-        )
-
-        other_time = max(
-            0.0,
-            processing_time - measured_time,
-        )
-
-        def average_ms(
-            total_time: float,
-        ) -> float:
-            return (
-                total_time
-                / frame_count
-                * 1000
-            )
-
-        def percentage(
-            total_time: float,
-        ) -> float:
-            if processing_time <= 0:
-                return 0.0
-
-            return (
-                total_time
-                / processing_time
-                * 100
-            )
-
-        processing_fps = (
-            frame_count / processing_time
-            if processing_time > 0
-            else 0.0
-        )
-
-        print()
-        print("=" * 58)
-        print("AI-Video Module Performance")
-        print("=" * 58)
-        print(
-            f"Frames          : "
-            f"{frame_count}"
-        )
-        print(
-            f"Processing Time : "
-            f"{processing_time:.2f} sec"
-        )
-        print(
-            f"Processing FPS  : "
-            f"{processing_fps:.2f}"
-        )
-        print("-" * 58)
-
-        print(
-            f"Detection       : "
-            f"{self.detector_time:8.2f} sec | "
-            f"{average_ms(self.detector_time):7.2f} "
-            f"ms/frame | "
-            f"{percentage(self.detector_time):6.2f}%"
-        )
-
-        print(
-            f"Tracking        : "
-            f"{self.tracker_time:8.2f} sec | "
-            f"{average_ms(self.tracker_time):7.2f} "
-            f"ms/frame | "
-            f"{percentage(self.tracker_time):6.2f}%"
-        )
-
-        print(
-            f"Rendering       : "
-            f"{self.renderer_time:8.2f} sec | "
-            f"{average_ms(self.renderer_time):7.2f} "
-            f"ms/frame | "
-            f"{percentage(self.renderer_time):6.2f}%"
-        )
-
-        print(
-            f"Video Writing   : "
-            f"{self.writer_time:8.2f} sec | "
-            f"{average_ms(self.writer_time):7.2f} "
-            f"ms/frame | "
-            f"{percentage(self.writer_time):6.2f}%"
-        )
-
-        print(
-            f"Other / Reading : "
-            f"{other_time:8.2f} sec | "
-            f"{average_ms(other_time):7.2f} "
-            f"ms/frame | "
-            f"{percentage(other_time):6.2f}%"
-        )
-
-        print("=" * 58)

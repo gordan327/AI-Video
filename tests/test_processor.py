@@ -143,3 +143,118 @@ def test_processor_initial_timing_values(
     assert processor.renderer_time == 0.0
     assert processor.writer_time == 0.0
     assert processor.current_faces == []
+
+def test_process_frame_pipeline(
+    monkeypatch,
+):
+    """單一影格應依序通過 Detector、Tracker 與 Renderer。"""
+
+    monkeypatch.setattr(
+        "ai_video.processor.ModelManager",
+        DummyModelManager,
+    )
+
+    processor = VideoProcessor(
+        config=DummyConfig(),
+    )
+
+    call_order = []
+
+    input_frame = object()
+    output_frame = object()
+
+    detected_faces = [
+        "detected-face",
+    ]
+
+    tracked_faces = [
+        "tracked-face",
+    ]
+
+    class DummyDetector:
+        def detect(
+            self,
+            frame,
+        ):
+            call_order.append("detector")
+
+            assert frame is input_frame
+
+            return detected_faces
+
+    class DummyTracker:
+        def track(
+            self,
+            faces,
+        ):
+            call_order.append("tracker")
+
+            assert faces is detected_faces
+
+            return tracked_faces
+
+    class DummyRenderer:
+        def draw(
+            self,
+            frame,
+            faces,
+        ):
+            call_order.append("renderer")
+
+            assert frame is input_frame
+            assert faces is tracked_faces
+
+            return output_frame
+
+    processor.frame_processor.detector = DummyDetector()
+    processor.frame_processor.tracker = DummyTracker()
+    processor.frame_processor.renderer = DummyRenderer()
+
+    result = processor.process_frame(
+        input_frame,
+    )
+
+    assert result is output_frame
+
+    assert call_order == [
+        "detector",
+        "tracker",
+        "renderer",
+    ]
+
+    assert processor.current_faces is tracked_faces
+
+    assert processor.detector_time >= 0.0
+    assert processor.tracker_time >= 0.0
+    assert processor.renderer_time >= 0.0
+
+def test_processor_report_callbacks(
+    monkeypatch,
+):
+    """Processor 應將進度、狀態與統計資料傳給對應 Callback。"""
+
+    monkeypatch.setattr(
+        "ai_video.processor.ModelManager",
+        DummyModelManager,
+    )
+
+    received_progress = []
+    received_status = []
+    received_stats = []
+
+    processor = VideoProcessor(
+        config=DummyConfig(),
+        progress_callback=received_progress.append,
+        status_callback=received_status.append,
+        stats_callback=received_stats.append,
+    )
+
+    stats = object()
+
+    processor.report_progress(42)
+    processor.report_status("正在處理")
+    processor.report_stats(stats)
+
+    assert received_progress == [42]
+    assert received_status == ["正在處理"]
+    assert received_stats == [stats]
