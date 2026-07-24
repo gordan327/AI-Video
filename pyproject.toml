@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-video"
-version = "0.7.0"
+version = "1.0.0"
 
 description = "Privacy-first AI Video Framework with plugin-based face detection, tracking and rendering."
 
@@ -64,6 +64,10 @@ ai-video-gui = "ai_video.gui.app:main"
 [tool.setuptools]
 
 package-dir = { "" = "src" }
+
+[tool.setuptools.package-data]
+
+ai_video = ["config/*.yaml"]
 
 [tool.setuptools.packages.find]
 

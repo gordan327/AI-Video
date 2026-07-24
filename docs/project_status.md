@@ -2,7 +2,7 @@
 
 ## Current Version
 
-0.7.0
+1.0.0
 
 ---
 
