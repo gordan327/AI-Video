@@ -1,33 +1,51 @@
 # AI-Video Project Status
 
-Current Version
+## Current Version
 
 0.7.0
 
-Completed
+---
+
+## Current Status
+
+Current development stage:
+
+Version 1.0 Stabilization
+
+Repository QA in progress.
+
+---
+
+## Completed Milestones
 
 - Unified Architecture
 - Plugin Framework
 - Package Modularization
-- CLI
-- GUI
-- CI
-- Makefile
-- Documentation
-- Unit Tests
+- Desktop GUI
+- Command Line Interface
+- Continuous Integration
+- Documentation System
+- Publication QA
+- Repository QA (R1–R3)
+- 119 Automated Tests
 
-Current Sprint
+---
 
-Sprint A — Quality
+## Current Focus
 
-Next Goals
+Project Consistency Review (R4)
 
-- Processor Integration Test
-- ConfigManager Test
-- Video I/O Tests
-- Benchmark
-- RetinaFace Plugin
+---
 
-Long-term Goal
+## Remaining Steps before Version 1.0
 
-AI-Video 1.0
+- Complete Repository QA
+- Final Release Checklist
+- Version Tag
+- GitHub Release
+
+---
+
+## Long-term Vision
+
+AI-Video aims to become a reusable, plugin-based privacy framework for AI-powered video processing.

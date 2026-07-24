@@ -1,14 +1,14 @@
 # AI-Video Architecture
 
-> Version: Architecture 2.0
+> Version: Architecture 2.1
 
 ---
 
 # 1. Design Philosophy
 
-AI-Video is designed as a modular, extensible, and maintainable video privacy framework.
+AI-Video is designed as a modular, extensible, and maintainable privacy-first video processing framework.
 
-The project follows several core principles:
+The project follows several core software engineering principles:
 
 - Single Responsibility Principle
 - Layered Architecture
@@ -17,34 +17,34 @@ The project follows several core principles:
 - Low Coupling
 - High Cohesion
 
-Every subsystem has a clear responsibility and communicates through well-defined interfaces.
+Each subsystem has a clearly defined responsibility and communicates through well-defined interfaces.
 
 ---
 
 # 2. Overall Architecture
 
 ```
-                GUI
-                 │
-                 ▼
-          VideoProcessor
-                 │
-     ┌───────────┼───────────┐
-     ▼           ▼           ▼
- Detector     Tracker    Renderer
-     │           │           │
- Detector    Tracking   Renderer
- Factory      Engine     Factory
-     │
-     ▼
+                     GUI
+                      │
+                      ▼
+               VideoProcessor
+                      │
+      ┌───────────────┼───────────────┐
+      ▼               ▼               ▼
+ Detector         Tracker         Renderer
+      │               │               │
+      ▼               ▼               ▼
+DetectorFactory  Tracking Engine  RendererFactory
+      │
+      ▼
   AI Models
 
-                 │
-                 ▼
-        Video Reader / Writer
+                      │
+                      ▼
+          Video Reader / Writer
 ```
 
-The VideoProcessor coordinates the complete pipeline while individual modules remain independent.
+The `VideoProcessor` coordinates the entire processing pipeline while keeping all subsystems independent and interchangeable.
 
 ---
 
@@ -53,28 +53,27 @@ The VideoProcessor coordinates the complete pipeline while individual modules re
 ```
 ai_video/
 
+├── config/
 ├── detector/
+├── gui/
+├── models/
+├── renderer/
 ├── tracker/
 ├── tracking/
-├── renderer/
 ├── video/
-├── gui/
-├── config/
-├── models/
 │
-├── processor.py
-├── model_manager.py
 ├── config_manager.py
+├── face.py
+├── logger.py
+├── model_manager.py
 ├── privacy_region.py
 ├── processing_stats.py
-├── logger.py
-├── face.py
-└── version.py
+├── processor.py
 ```
 
 The root package contains only shared services and domain objects.
 
-Subsystem implementations are placed in dedicated packages.
+Subsystem implementations are organized into dedicated packages.
 
 ---
 
@@ -99,13 +98,15 @@ Renderer
 VideoWriter
 ```
 
-Each stage performs a single responsibility.
+Each processing stage performs a single responsibility.
+
+The `VideoProcessor` coordinates the pipeline but does not implement detection, tracking, or rendering itself.
 
 ---
 
 # 5. Plugin Architecture
 
-Detector
+## Detector
 
 ```
 DetectorFactory
@@ -117,7 +118,9 @@ DetectorFactory
 SCRFD     YOLO
 ```
 
-Tracker
+---
+
+## Tracker
 
 ```
 TrackerFactory
@@ -127,16 +130,18 @@ TrackerFactory
  ByteTrack
 ```
 
-Renderer
+---
+
+## Renderer
 
 ```
 RendererFactory
 
       │
 
- ┌────┴────────┐
- │             │
-Blur      Pixelate
+ ┌──────────────┬──────────────┬──────────────┐
+ │              │              │
+Blur        Pixelate      Solid Color
 ```
 
 New implementations can be added by registering them in the corresponding Factory.
@@ -147,41 +152,33 @@ New implementations can be added by registering them in the corresponding Factor
 
 ```
 Frame
-
-↓
-
+   │
+   ▼
 Detector
-
-↓
-
+   │
+   ▼
 List[Face]
-
-↓
-
+   │
+   ▼
 Tracker
-
-↓
-
+   │
+   ▼
 Tracked Face
-
-↓
-
+   │
+   ▼
 PrivacyRegion
-
-↓
-
+   │
+   ▼
 Renderer
-
-↓
-
+   │
+   ▼
 Frame
-
-↓
-
+   │
+   ▼
 VideoWriter
 ```
 
-The Face object is the shared domain model across the pipeline.
+The `Face` object is the shared domain model across the entire processing pipeline.
 
 ---
 
@@ -191,13 +188,17 @@ The Face object is the shared domain model across the pipeline.
 
 Responsible for AI-based face detection.
 
+---
+
 ## tracker/
 
 Responsible for high-level tracking components.
 
+---
+
 ## tracking/
 
-Contains internal tracking algorithms:
+Contains internal tracking algorithms, including:
 
 - Kalman Filter
 - Matching
@@ -206,47 +207,69 @@ Contains internal tracking algorithms:
 - Geometry
 - Track Manager
 
+These modules are internal implementation details rather than public APIs.
+
+---
+
 ## renderer/
 
 Responsible for privacy rendering.
 
+---
+
 ## video/
 
-Responsible for video I/O and FFmpeg integration.
+Responsible for video input/output and FFmpeg integration.
+
+---
 
 ## gui/
 
-Desktop application.
+Provides the desktop graphical user interface.
+
+---
 
 ## models/
 
-AI model management.
+Responsible for AI model management.
+
+---
+
+## config/
+
+Stores configuration resources used by the application.
 
 ---
 
 # 8. Design Principles
 
-AI-Video follows the following software engineering principles.
-
 ## Layered Architecture
 
-Each layer only communicates with adjacent layers.
+Each layer communicates only with adjacent layers.
+
+---
 
 ## Factory Pattern
 
-Subsystem implementations are created through Factory classes.
+Concrete implementations are created through Factory classes rather than directly instantiated by the processor.
 
-## Plugin Pattern
+---
 
-New detectors, trackers, and renderers can be added without modifying the processing pipeline.
+## Plugin Architecture
+
+New Detectors, Trackers, and Renderers can be integrated without modifying the processing pipeline.
+
+---
 
 ## Single Responsibility Principle
 
 Every class has one primary responsibility.
 
+---
+
 ## Dependency Isolation
 
-The processor coordinates modules without depending on implementation details.
+The `VideoProcessor` coordinates the pipeline without depending on implementation details.
 
 ---
 
@@ -255,18 +278,20 @@ The processor coordinates modules without depending on implementation details.
 Planned detector plugins
 
 - RetinaFace
-- YOLOv11 Face
+- YOLO Face
+
+---
 
 Planned tracker plugins
 
 - StrongSORT
 - DeepSORT
 
+---
+
 Planned renderer plugins
 
-- Solid Color
-- Mosaic
 - Emoji
 - AI Replacement
 
-The architecture is intentionally designed so that these extensions require minimal changes to existing code.
+The architecture is intentionally designed so these extensions can be integrated with minimal changes to the existing codebase.
