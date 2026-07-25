@@ -42,6 +42,7 @@ jobs:
             --enable-plugin=pyside6 `
             --windows-console-mode=disable `
             --assume-yes-for-downloads `
+            --low-memory `
             --module-parameter=torch-disable-jit=yes `
             --include-data-dir=src/ai_video/config=ai_video/config `
             --include-module=scipy._external.array_api_compat.numpy.fft `
