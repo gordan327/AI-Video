@@ -45,6 +45,7 @@ dependencies = [
     "ffmpeg-python",
     "ultralytics",
     "insightface",
+    "onnxruntime",
     "PySide6",
 ]
 

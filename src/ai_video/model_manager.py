@@ -1,6 +1,6 @@
-from pathlib import Path
-
 from insightface.app import FaceAnalysis
+
+from ai_video.resource_manager import ResourceManager
 
 
 class ModelManager:
@@ -31,9 +31,13 @@ class ModelManager:
             if not provider or provider == "auto":
                 provider = "CPUExecutionProvider"
 
+            insightface_root = (
+                ResourceManager.ensure_insightface_root()
+            )
+
             self._face_analysis = FaceAnalysis(
                 name=model_name,
-                root=str(Path("models/downloads")),
+                root=str(insightface_root),
                 providers=[provider],
             )
 

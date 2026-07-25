@@ -2,6 +2,7 @@ from pathlib import Path
 from ai_video.config.configuration_error import (
     ConfigurationError,
 )
+from ai_video.resource_manager import ResourceManager
 
 import yaml
 
@@ -14,11 +15,7 @@ class ConfigManager:
         config_path: str | Path | None = None,
     ):
         if config_path is None:
-            config_path = (
-                Path(__file__).resolve().parent
-                / "config"
-                / "config.yaml"
-            )
+            config_path = ResourceManager.config_path()
 
         self.config_path = Path(config_path)
 
