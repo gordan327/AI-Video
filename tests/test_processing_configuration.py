@@ -5,6 +5,7 @@ from ai_video.gui.processing_configuration import (
 )
 from ai_video.gui.processing_job import ProcessingJob
 
+
 class FakeConfig:
     """測試用的簡易設定物件。"""
 
@@ -35,11 +36,15 @@ def test_apply_processing_configuration():
     )
 
     assert config.values == {
-        "video.input": "/videos/input.mp4",
-        "video.temp_output": (
-            "/exports/output_video_only.mp4"
+        "video.input": str(
+            Path("/videos/input.mp4")
         ),
-        "video.output": "/exports/output.mp4",
+        "video.temp_output": str(
+            Path("/exports/output_video_only.mp4")
+        ),
+        "video.output": str(
+            Path("/exports/output.mp4")
+        ),
         "detector.type": "scrfd",
         "tracker.type": "bytetrack",
         "renderer.type": "blur",
