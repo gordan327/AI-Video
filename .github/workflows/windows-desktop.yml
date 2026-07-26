@@ -42,7 +42,6 @@ jobs:
             --enable-plugin=pyside6 `
             --windows-console-mode=disable `
             --assume-yes-for-downloads `
-            --mingw64 `
             --clang `
             --low-memory `
             --module-parameter=torch-disable-jit=yes `
