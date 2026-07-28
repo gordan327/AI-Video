@@ -2,13 +2,13 @@
 
 ## Current Version
 
-1.0.0
+1.0.1
 
 ---
 
 ## Current Status
 
-Version 1.0 is release-ready.
+Version 1.0.1 has been officially released.
 
 The source release, macOS desktop application, and Windows portable
 distribution have completed their respective verification steps.
@@ -29,7 +29,7 @@ distribution have completed their respective verification steps.
 - 126 Automated Tests
 - macOS Desktop Build Verified
 - Windows Portable Build Verified
-- Git Tag v1.0.0
+- Git Tag v1.0.1
 
 ---
 
@@ -39,11 +39,11 @@ Public release publication and post-release maintenance
 
 ---
 
-## Remaining Publication Steps
+## Completed Publication
 
-- Create the GitHub Release from tag `v1.0.0`
-- Upload the verified macOS and Windows distribution files
-- Publish the Version 1.0 release notes
+- GitHub Release created from tag `v1.0.1`
+- Verified macOS and Windows distribution files uploaded
+- Version 1.0.1 release notes published
 
 ---
 

@@ -1,6 +1,6 @@
 # AI-Video 1.0 Release Notes
 
-**Release:** 1.0.0  
+**Release:** 1.0.1
 **Date:** 2026-07-28
 
 AI-Video 1.0 is the first stable release of the privacy-first video

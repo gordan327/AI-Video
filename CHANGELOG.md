@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 
 ---
+## [1.0.1] - 2026-07-28
+
+### Changed
+
+- Updated the project and package version to 1.0.1.
+- Updated current-status documentation and release notes for version consistency.
+- Published the verified macOS and Windows distributions in GitHub Release v1.0.1.
+
+---
 
 ## [1.0.0] - 2026-07-28
 

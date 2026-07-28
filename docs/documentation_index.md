@@ -1,7 +1,7 @@
 # AI-Video Documentation Guide
 
 **Project:** AI-Video  
-**Version:** 1.0.0
+**Version:** 1.0.1
 
 ---
 
