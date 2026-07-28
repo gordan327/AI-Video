@@ -8,11 +8,10 @@
 
 ## Current Status
 
-Current development stage:
+Version 1.0 is release-ready.
 
-Version 1.0 Stabilization
-
-Repository QA in progress.
+The source release, macOS desktop application, and Windows portable
+distribution have completed their respective verification steps.
 
 ---
 
@@ -27,22 +26,24 @@ Repository QA in progress.
 - Documentation System
 - Publication QA
 - Repository QA (R1–R3)
-- 119 Automated Tests
+- 126 Automated Tests
+- macOS Desktop Build Verified
+- Windows Portable Build Verified
+- Git Tag v1.0.0
 
 ---
 
 ## Current Focus
 
-Project Consistency Review (R4)
+Public release publication and post-release maintenance
 
 ---
 
-## Remaining Steps before Version 1.0
+## Remaining Publication Steps
 
-- Complete Repository QA
-- Final Release Checklist
-- Version Tag
-- GitHub Release
+- Create the GitHub Release from tag `v1.0.0`
+- Upload the verified macOS and Windows distribution files
+- Publish the Version 1.0 release notes
 
 ---
 

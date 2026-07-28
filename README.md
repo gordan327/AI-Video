@@ -48,7 +48,7 @@ Current Version provides:
 - 🎯 Factory Pattern
 - 🎯 YAML Configuration
 - 🎯 Automatic Audio Preservation (FFmpeg)
-- 🎯 109 Automated Tests
+- 🎯 126 Automated Tests
 - 🎯 GitHub Actions Continuous Integration
 
 ---
@@ -108,7 +108,7 @@ ai-video --help
 - FFmpeg
 - macOS
 - Linux (experimental)
-- Windows support planned for Version 1.x
+- Windows
 
 ---
 
@@ -203,7 +203,7 @@ make test
 
 Current project status:
 
-- ✅ 109 automated tests
+- ✅ 126 automated tests
 - ✅ Editable installation
 - ✅ GUI application
 - ✅ CLI application

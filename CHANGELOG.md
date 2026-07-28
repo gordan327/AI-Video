@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.0.0] - 2026-07-28
+
+### Added
+
+- Added the PySide6 desktop application and command-line interface.
+- Added SCRFD face detection and ByteTrack face tracking.
+- Added blur, pixelate, and solid-color privacy renderers.
+- Added temporal privacy regions, prediction freeze, and expansion.
+- Added FFmpeg-based audio preservation.
+- Added plugin factories for detectors, trackers, and renderers.
+- Added macOS and Windows desktop packaging workflows.
+- Added 126 automated tests and continuous integration.
+- Added architecture, deployment, packaging, release, and contributor
+  documentation.
+
+### Verified
+
+- Verified the macOS `AI-Video.app` distribution.
+- Verified the Windows `AI-Video-Windows.zip` distribution on Windows.
+- Verified the Version 1.0 source and package metadata.
+
+### Notes
+
+- AI-Video 1.0.0 is the first stable public release.
+- Linux remains available as an experimental source installation.
+
+---
+
 ## [0.1.0] - 2026-07-01
 
 ### Added
@@ -49,4 +77,3 @@ The project is currently in the planning and infrastructure stage.
 
 - 加入FFmpeg Audio Merge
 - 產生中間檔，並生成有生的影像檔
-

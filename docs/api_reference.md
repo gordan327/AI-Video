@@ -788,9 +788,9 @@ Logger.unsubscribe(
 
 ## 12. API Stability
 
-目前 AI-Video 尚在 Beta 階段。
+AI-Video 1.0 已進入穩定發行階段。
 
-下列介面可視為主要擴充點：
+下列介面是 1.x 系列的主要穩定擴充點：
 
 ```text
 FaceDetector.detect()

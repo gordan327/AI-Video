@@ -1,6 +1,6 @@
 # AI-Video Version 1.0 Release Checklist
 
-> Last Updated: 2026-07-22
+> Last Updated: 2026-07-28
 
 ---
 
@@ -48,7 +48,7 @@ New features are **not** the primary goal.
 - [x] GitHub Actions CI
 - [x] Unit Tests
 - [x] Integration Tests
-- [x] 109 Passing Tests
+- [x] 126 Passing Tests
 
 ---
 
@@ -64,18 +64,20 @@ New features are **not** the primary goal.
 
 ---
 
-# Remaining Tasks
+# Release Verification
 
 ## Release
 
-- [ ] Review README
-- [ ] Review installation guide
-- [ ] Verify GUI workflow
-- [ ] Verify CLI workflow
-- [ ] Test on clean environment
-- [ ] Create Git Tag v1.0.0
+- [x] Review README
+- [x] Review installation guide
+- [x] Verify GUI workflow
+- [x] Verify CLI workflow
+- [x] Test macOS desktop distribution
+- [x] Test Windows portable distribution
+- [x] Create Git Tag v1.0.0
 - [ ] Create GitHub Release
 - [ ] Publish Release Notes
+- [ ] Upload macOS and Windows release assets
 
 ---
 

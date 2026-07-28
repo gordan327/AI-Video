@@ -1,7 +1,7 @@
 # AI-Video Version 1.0 Release Decision
 
 **Document Version:** 1.0  
-**Last Updated:** 2026-07-24
+**Last Updated:** 2026-07-28
 
 ---
 
@@ -34,8 +34,8 @@ The following review activities were completed before this release.
 
 Current automated test status:
 
-- Total Tests: **119**
-- Passed: **119**
+- Total Tests: **126**
+- Passed: **126**
 - Failed: **0**
 - Skipped: **0**
 
@@ -59,10 +59,19 @@ Completed verification:
 - Command Line Interface
 - GUI Launcher
 - Configuration File Packaging
+- macOS Desktop Application
+- Windows Portable Distribution
 
 Result:
 
 > PASS
+
+Platform verification:
+
+| Distribution | Result |
+|--------------|--------|
+| macOS `AI-Video.app` | PASS |
+| Windows `AI-Video-Windows.zip` | PASS |
 
 ---
 

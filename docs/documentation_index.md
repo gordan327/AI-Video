@@ -31,10 +31,10 @@ docs/
 ├── architecture.md
 ├── api_reference.md
 ├── release_plan_1.0.md
+├── release_notes_1.0.md
 ├── project_status.md
 ├── project_closing_report.md
-
-HISTORY.md
+└── HISTORY.md
 ```
 
 ---
@@ -212,6 +212,20 @@ Contents
 
 ---
 
+## docs/release_notes_1.0.md
+
+Purpose
+
+Summarizes user-visible features, downloads, verification, and known
+limitations for Version 1.0.
+
+Primary audience
+
+- Users
+- Release maintainers
+
+---
+
 ## docs/project_closing_report.md
 
 Purpose
@@ -232,7 +246,7 @@ Contents
 
 ---
 
-## HISTORY.md
+## docs/HISTORY.md
 
 Purpose
 

@@ -110,7 +110,7 @@ AI-Video 1.0 should provide:
 
 Current Status
 
-- **119 automated tests passed**
+- **126 automated tests passed**
 
 ---
 
@@ -230,7 +230,7 @@ Requirements
 
 Current Status
 
-- ✅ 119 tests passed
+- ✅ 126 tests passed
 
 ---
 
