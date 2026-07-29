@@ -229,10 +229,52 @@ jobs:
           Get-Item "dist/AI-Video-Windows.zip" |
             Select-Object FullName, Length
 
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress --yes
+
+      - name: Build Windows installer
+        shell: pwsh
+        run: |
+          $compiler = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          $installerScript = "installer/windows/AI-Video.iss"
+          $installerOutput = "dist/AI-Video-Setup-v1.0.1.exe"
+
+          if (-not (Test-Path $compiler)) {
+            throw "Inno Setup compiler was not found: $compiler"
+          }
+
+          if (-not (Test-Path $installerScript)) {
+            throw "Installer script was not found: $installerScript"
+          }
+
+          & $compiler $installerScript
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Inno Setup failed with exit code $LASTEXITCODE."
+          }
+
+          if (-not (Test-Path $installerOutput)) {
+            throw "Windows installer was not created: $installerOutput"
+          }
+
+          Write-Host "Windows installer:"
+          Get-Item $installerOutput |
+            Select-Object FullName, Length
+
       - name: Upload Windows application
         uses: actions/upload-artifact@v4
         with:
           name: AI-Video-Windows
           path: dist/AI-Video-Windows.zip
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: AI-Video-Windows-Installer
+          path: dist/AI-Video-Setup-v1.0.1.exe
           if-no-files-found: error
           retention-days: 14
