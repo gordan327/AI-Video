@@ -70,6 +70,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(title)
 
         # 輸入影片
+        # 輸入影片
         input_row = QHBoxLayout()
 
         input_label = QLabel("輸入影片")
@@ -81,10 +82,13 @@ class MainWindow(QMainWindow):
         )
 
         self.input_button = QPushButton("瀏覽")
+        self.add_queue_button = QPushButton("加入佇列")
+        self.add_queue_button.setEnabled(False)
 
         input_row.addWidget(input_label)
         input_row.addWidget(self.input_edit)
         input_row.addWidget(self.input_button)
+        input_row.addWidget(self.add_queue_button)
 
         layout.addLayout(input_row)
 
