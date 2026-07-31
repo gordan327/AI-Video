@@ -64,13 +64,16 @@ class ProcessingQueue:
     def next_waiting(
         self,
     ) -> ProcessingQueueItem | None:
-        """傳回下一支等待中的影片。"""
+        """取得下一支等待影片並標記為處理中。"""
 
         for item in self._items:
             if (
                 item.status
                 is ProcessingQueueStatus.WAITING
             ):
+                item.status = (
+                    ProcessingQueueStatus.PROCESSING
+                )
                 return item
 
         return None

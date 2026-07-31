@@ -119,6 +119,56 @@ def test_processing_queue_returns_none_when_empty():
     assert queue.next_waiting() is None
 
 
+def test_processing_queue_marks_next_item_processing():
+    queue = ProcessingQueue()
+
+    item = queue.add(
+        Path("/videos/input.mp4"),
+        Path("/exports/input.mp4"),
+    )
+
+    assert item is not None
+    assert (
+        item.status
+        is ProcessingQueueStatus.WAITING
+    )
+
+    selected = queue.next_waiting()
+
+    assert selected is item
+    assert (
+        item.status
+        is ProcessingQueueStatus.PROCESSING
+    )
+
+
+def test_processing_queue_skips_processing_item():
+    queue = ProcessingQueue()
+
+    first = queue.add(
+        Path("/videos/first.mp4"),
+        Path("/exports/first.mp4"),
+    )
+    second = queue.add(
+        Path("/videos/second.mp4"),
+        Path("/exports/second.mp4"),
+    )
+
+    assert first is not None
+    assert second is not None
+
+    assert queue.next_waiting() is first
+    assert queue.next_waiting() is second
+    assert (
+        first.status
+        is ProcessingQueueStatus.PROCESSING
+    )
+    assert (
+        second.status
+        is ProcessingQueueStatus.PROCESSING
+    )
+
+
 def test_processing_queue_removes_waiting_item():
     queue = ProcessingQueue()
 
