@@ -310,6 +310,84 @@ def test_processing_queue_skips_cancelled_item():
         is ProcessingQueueStatus.PROCESSING
     )
 
+def test_processing_queue_requeues_failed_item():
+    queue = ProcessingQueue()
+
+    item = queue.add(
+        Path("/videos/input.mp4"),
+        Path("/exports/input.mp4"),
+    )
+
+    assert item is not None
+    assert queue.next_waiting() is item
+    assert (
+        queue.mark_failed(
+            item,
+            "影片處理失敗",
+        )
+        is True
+    )
+
+    assert queue.requeue(item) is True
+    assert (
+        item.status
+        is ProcessingQueueStatus.WAITING
+    )
+    assert item.error_message is None
+
+
+def test_processing_queue_requeues_cancelled_item():
+    queue = ProcessingQueue()
+
+    item = queue.add(
+        Path("/videos/input.mp4"),
+        Path("/exports/input.mp4"),
+    )
+
+    assert item is not None
+    assert queue.cancel(item) is True
+    assert queue.requeue(item) is True
+    assert (
+        item.status
+        is ProcessingQueueStatus.WAITING
+    )
+    assert item.error_message is None
+
+
+def test_processing_queue_processes_requeued_item():
+    queue = ProcessingQueue()
+
+    item = queue.add(
+        Path("/videos/input.mp4"),
+        Path("/exports/input.mp4"),
+    )
+
+    assert item is not None
+    assert queue.cancel(item) is True
+    assert queue.requeue(item) is True
+    assert queue.next_waiting() is item
+    assert (
+        item.status
+        is ProcessingQueueStatus.PROCESSING
+    )
+
+
+def test_processing_queue_rejects_requeueing_completed_item():
+    queue = ProcessingQueue()
+
+    item = queue.add(
+        Path("/videos/input.mp4"),
+        Path("/exports/input.mp4"),
+    )
+
+    assert item is not None
+    assert queue.next_waiting() is item
+    assert queue.mark_completed(item) is True
+    assert queue.requeue(item) is False
+    assert (
+        item.status
+        is ProcessingQueueStatus.COMPLETED
+    )
 
 def test_processing_queue_removes_waiting_item():
     queue = ProcessingQueue()

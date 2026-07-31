@@ -133,6 +133,27 @@ class ProcessingQueue:
 
         return True
 
+    def requeue(
+        self,
+        item: ProcessingQueueItem,
+    ) -> bool:
+        """將失敗或已取消的項目重新排入等待佇列。"""
+
+        if (
+            item not in self._items
+            or item.status
+            not in {
+                ProcessingQueueStatus.FAILED,
+                ProcessingQueueStatus.CANCELLED,
+            }
+        ):
+            return False
+
+        item.status = ProcessingQueueStatus.WAITING
+        item.error_message = None
+
+        return True
+
     def remove(
         self,
         item: ProcessingQueueItem,
