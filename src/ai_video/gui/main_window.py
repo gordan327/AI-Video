@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QListWidget,
     QMainWindow,
     QProgressBar,
     QPushButton,
@@ -41,7 +42,7 @@ class MainWindow(QMainWindow):
         )
 
         self.setWindowTitle(f"AI-Video {__version__}")
-        self.resize(900, 650)
+        self.resize(900, 760)
         self.setAcceptDrops(True)
 
         self.setup_ui()
@@ -105,6 +106,23 @@ class MainWindow(QMainWindow):
         output_row.addWidget(self.output_button)
 
         layout.addLayout(output_row)
+
+        # 處理佇列
+        queue_title = QLabel("處理佇列")
+        queue_title.setStyleSheet(
+            """
+            font-size: 16px;
+            font-weight: bold;
+            """
+        )
+        layout.addWidget(queue_title)
+
+        self.queue_list = QListWidget()
+        self.queue_list.setMinimumHeight(90)
+        self.queue_list.setMaximumHeight(140)
+        self.queue_list.setAlternatingRowColors(True)
+
+        layout.addWidget(self.queue_list)
 
         # 處理設定
         settings_title = QLabel("處理設定")
