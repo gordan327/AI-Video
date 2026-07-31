@@ -250,6 +250,67 @@ def test_processing_queue_rejects_failing_waiting_item():
     assert item.error_message is None
 
 
+def test_processing_queue_cancels_waiting_item():
+    queue = ProcessingQueue()
+
+    item = queue.add(
+        Path("/videos/input.mp4"),
+        Path("/exports/input.mp4"),
+    )
+
+    assert item is not None
+    assert queue.cancel(item) is True
+    assert (
+        item.status
+        is ProcessingQueueStatus.CANCELLED
+    )
+    assert item.error_message is None
+    assert queue.items == (item,)
+
+
+def test_processing_queue_rejects_cancelling_processing_item():
+    queue = ProcessingQueue()
+
+    item = queue.add(
+        Path("/videos/input.mp4"),
+        Path("/exports/input.mp4"),
+    )
+
+    assert item is not None
+    assert queue.next_waiting() is item
+    assert queue.cancel(item) is False
+    assert (
+        item.status
+        is ProcessingQueueStatus.PROCESSING
+    )
+
+
+def test_processing_queue_skips_cancelled_item():
+    queue = ProcessingQueue()
+
+    first = queue.add(
+        Path("/videos/first.mp4"),
+        Path("/exports/first.mp4"),
+    )
+    second = queue.add(
+        Path("/videos/second.mp4"),
+        Path("/exports/second.mp4"),
+    )
+
+    assert first is not None
+    assert second is not None
+    assert queue.cancel(first) is True
+    assert queue.next_waiting() is second
+    assert (
+        first.status
+        is ProcessingQueueStatus.CANCELLED
+    )
+    assert (
+        second.status
+        is ProcessingQueueStatus.PROCESSING
+    )
+
+
 def test_processing_queue_removes_waiting_item():
     queue = ProcessingQueue()
 

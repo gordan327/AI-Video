@@ -115,6 +115,24 @@ class ProcessingQueue:
 
         return True
 
+    def cancel(
+        self,
+        item: ProcessingQueueItem,
+    ) -> bool:
+        """取消仍在等待中的項目。"""
+
+        if (
+            item not in self._items
+            or item.status
+            is not ProcessingQueueStatus.WAITING
+        ):
+            return False
+
+        item.status = ProcessingQueueStatus.CANCELLED
+        item.error_message = None
+
+        return True
+
     def remove(
         self,
         item: ProcessingQueueItem,
