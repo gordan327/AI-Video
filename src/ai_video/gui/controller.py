@@ -9,6 +9,7 @@ from ai_video.config_manager import ConfigManager
 from ai_video.gui.preferences_dialog import PreferencesDialog
 from ai_video.gui.processing_configuration import ProcessingConfiguration
 from ai_video.gui.processing_job import ProcessingJob
+from ai_video.gui.processing_queue import ProcessingQueue
 from ai_video.gui.processing_state_manager import ProcessingStateManager
 from ai_video.gui.video_path_manager import VideoPathManager
 from ai_video.gui.worker import Worker
@@ -42,7 +43,7 @@ class Controller(QObject):
         self.thread = None
         self.worker = None
         self.config = ConfigManager()
-
+        self.processing_queue = ProcessingQueue()
         self.processing_started_at = None
 
         self.connect_signals()
@@ -91,6 +92,10 @@ class Controller(QObject):
 
         self.window.output_button.clicked.connect(
             self.select_output_video
+        )
+
+        self.window.add_queue_button.clicked.connect(
+            self.add_video_to_queue
         )
 
         self.window.start_button.clicked.connect(
@@ -147,6 +152,8 @@ class Controller(QObject):
             f"已選擇輸入影片：{input_path}"
         )
 
+        self.window.add_queue_button.setEnabled(True)        
+
         self.add_log(
             f"預設輸出影片：{output_path}"
         )
@@ -192,6 +199,50 @@ class Controller(QObject):
         )
 
         self.set_input_video(filename)
+
+    def add_video_to_queue(self):
+        """將目前選擇的影片加入處理佇列。"""
+
+        input_text = self.window.input_edit.text().strip()
+        output_text = self.window.output_edit.text().strip()
+
+        if not input_text or not output_text:
+            QMessageBox.warning(
+                self.window,
+                "無法加入佇列",
+                "請先選擇輸入影片並指定輸出位置。",
+            )
+            return
+
+        input_path = Path(input_text)
+        output_path = Path(output_text)
+
+        item = self.processing_queue.add(
+            input_path,
+            output_path,
+        )
+
+        if item is None:
+            QMessageBox.information(
+                self.window,
+                "影片已在佇列中",
+                "這支影片已經加入處理佇列。",
+            )
+            return
+
+        self.window.queue_list.addItem(
+            f"等待處理｜{input_path.name}"
+        )
+
+        self.window.add_queue_button.setEnabled(False)
+
+        self.window.status_label.setText(
+            "影片已加入處理佇列"
+        )
+
+        self.add_log(
+            f"已加入處理佇列：{input_path}"
+        )
 
     def select_output_video(self):
         """指定輸出影片的位置。"""
