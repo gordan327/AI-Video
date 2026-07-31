@@ -169,6 +169,87 @@ def test_processing_queue_skips_processing_item():
     )
 
 
+def test_processing_queue_marks_item_completed():
+    queue = ProcessingQueue()
+
+    item = queue.add(
+        Path("/videos/input.mp4"),
+        Path("/exports/input.mp4"),
+    )
+
+    assert item is not None
+    assert queue.next_waiting() is item
+    assert queue.mark_completed(item) is True
+    assert (
+        item.status
+        is ProcessingQueueStatus.COMPLETED
+    )
+    assert item.error_message is None
+
+
+def test_processing_queue_rejects_completing_waiting_item():
+    queue = ProcessingQueue()
+
+    item = queue.add(
+        Path("/videos/input.mp4"),
+        Path("/exports/input.mp4"),
+    )
+
+    assert item is not None
+    assert queue.mark_completed(item) is False
+    assert (
+        item.status
+        is ProcessingQueueStatus.WAITING
+    )
+
+
+def test_processing_queue_marks_item_failed():
+    queue = ProcessingQueue()
+
+    item = queue.add(
+        Path("/videos/input.mp4"),
+        Path("/exports/input.mp4"),
+    )
+
+    assert item is not None
+    assert queue.next_waiting() is item
+    assert (
+        queue.mark_failed(
+            item,
+            "影片處理失敗",
+        )
+        is True
+    )
+    assert (
+        item.status
+        is ProcessingQueueStatus.FAILED
+    )
+    assert item.error_message == "影片處理失敗"
+
+
+def test_processing_queue_rejects_failing_waiting_item():
+    queue = ProcessingQueue()
+
+    item = queue.add(
+        Path("/videos/input.mp4"),
+        Path("/exports/input.mp4"),
+    )
+
+    assert item is not None
+    assert (
+        queue.mark_failed(
+            item,
+            "不應記錄的錯誤",
+        )
+        is False
+    )
+    assert (
+        item.status
+        is ProcessingQueueStatus.WAITING
+    )
+    assert item.error_message is None
+
+
 def test_processing_queue_removes_waiting_item():
     queue = ProcessingQueue()
 

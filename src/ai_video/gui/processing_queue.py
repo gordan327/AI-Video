@@ -78,6 +78,43 @@ class ProcessingQueue:
 
         return None
 
+    def mark_completed(
+        self,
+        item: ProcessingQueueItem,
+    ) -> bool:
+        """將處理中的項目標記為完成。"""
+
+        if (
+            item not in self._items
+            or item.status
+            is not ProcessingQueueStatus.PROCESSING
+        ):
+            return False
+
+        item.status = ProcessingQueueStatus.COMPLETED
+        item.error_message = None
+
+        return True
+
+    def mark_failed(
+        self,
+        item: ProcessingQueueItem,
+        error_message: str,
+    ) -> bool:
+        """將處理中的項目標記為失敗並記錄原因。"""
+
+        if (
+            item not in self._items
+            or item.status
+            is not ProcessingQueueStatus.PROCESSING
+        ):
+            return False
+
+        item.status = ProcessingQueueStatus.FAILED
+        item.error_message = error_message
+
+        return True
+
     def remove(
         self,
         item: ProcessingQueueItem,
