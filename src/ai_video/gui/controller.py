@@ -2,14 +2,17 @@ from datetime import datetime
 from pathlib import Path
 from time import perf_counter
 
-from PySide6.QtCore import QObject, QSettings, QThread, Signal, Slot
+from PySide6.QtCore import QObject, QSettings, QThread, Signal, QTimer, Slot
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from ai_video.config_manager import ConfigManager
 from ai_video.gui.preferences_dialog import PreferencesDialog
 from ai_video.gui.processing_configuration import ProcessingConfiguration
 from ai_video.gui.processing_job import ProcessingJob
-from ai_video.gui.processing_queue import ProcessingQueue
+from ai_video.gui.processing_queue import (
+    ProcessingQueue,
+    ProcessingQueueStatus,
+)
 from ai_video.gui.processing_state_manager import ProcessingStateManager
 from ai_video.gui.video_path_manager import VideoPathManager
 from ai_video.gui.worker import Worker
@@ -45,7 +48,8 @@ class Controller(QObject):
         self.config = ConfigManager()
         self.processing_queue = ProcessingQueue()
         self.processing_started_at = None
-
+        self.current_queue_item = None
+        self.continue_queue_after_cleanup = False
         self.connect_signals()
 
         self.log_received.connect(
@@ -367,12 +371,35 @@ class Controller(QObject):
             )
             return
 
-        input_text = (
-            self.window.input_edit.text().strip()
-        )
-        output_text = (
-            self.window.output_edit.text().strip()
-        )
+        queue_item = self.processing_queue.next_waiting()
+
+        if queue_item is not None:
+            self.current_queue_item = queue_item
+
+            input_text = str(queue_item.input_path)
+            queue_index = (
+                self.processing_queue.items.index(queue_item)
+            )
+
+            self.window.queue_list.item(
+                queue_index
+            ).setText(
+                f"處理中｜{queue_item.input_path.name}"
+            )
+
+            output_text = str(queue_item.output_path)
+
+            self.window.input_edit.setText(input_text)
+            self.window.output_edit.setText(output_text)
+        else:
+            self.current_queue_item = None
+
+            input_text = (
+                self.window.input_edit.text().strip()
+            )
+            output_text = (
+                self.window.output_edit.text().strip()
+            )
 
         if not input_text:
             QMessageBox.warning(
@@ -656,11 +683,32 @@ class Controller(QObject):
             level="SUCCESS",
         )
 
-        QMessageBox.information(
-            self.window,
-            "處理完成",
-            f"影片已輸出至：\n{output_path}",
-        )
+        if self.current_queue_item is not None:
+            self.processing_queue.mark_completed(
+                self.current_queue_item
+            )
+
+            queue_index = (
+                self.processing_queue.items.index(
+                    self.current_queue_item
+                )
+            )
+
+            self.window.queue_list.item(
+                queue_index
+            ).setText(
+                "已完成｜"
+                f"{self.current_queue_item.input_path.name}"
+            )
+
+            self.continue_queue_after_cleanup = True
+
+        else:
+            QMessageBox.information(
+                self.window,
+                "處理完成",
+                f"影片已輸出至：\n{output_path}",
+            )
 
     @Slot()
     def processing_cancelled(self):
@@ -680,6 +728,26 @@ class Controller(QObject):
             result="使用者停止",
             level="WARNING",
         )
+
+        if self.current_queue_item is not None:
+            self.processing_queue.mark_cancelled(
+                self.current_queue_item
+            )
+
+            queue_index = (
+                self.processing_queue.items.index(
+                    self.current_queue_item
+                )
+            )
+
+            self.window.queue_list.item(
+                queue_index
+            ).setText(
+                "已停止｜"
+                f"{self.current_queue_item.input_path.name}"
+            )
+
+            self.continue_queue_after_cleanup = False
 
         QMessageBox.information(
             self.window,
@@ -706,10 +774,48 @@ class Controller(QObject):
             level="ERROR",
         )
 
+        if self.current_queue_item is not None:
+            self.processing_queue.mark_failed(
+                self.current_queue_item,
+                message,
+            )
+
+            queue_index = (
+                self.processing_queue.items.index(
+                    self.current_queue_item
+                )
+            )
+
+            self.window.queue_list.item(
+                queue_index
+            ).setText(
+                "處理失敗｜"
+                f"{self.current_queue_item.input_path.name}"
+            )
+
+            self.continue_queue_after_cleanup = True
+
+        if self.current_queue_item is not None:
+            failed_name = (
+                self.current_queue_item.input_path.name
+            )
+
+            user_message = (
+                f"無法處理影片：{failed_name}\n\n"
+                "請確認檔案格式及內容是否正常。\n"
+                "詳細資訊已保留在執行紀錄中。"
+            )
+        else:
+            user_message = (
+                "影片處理失敗。\n\n"
+                "請確認檔案格式及內容是否正常。\n"
+                "詳細資訊已保留在執行紀錄中。"
+            )
+
         QMessageBox.critical(
             self.window,
             "影片處理失敗",
-            message,
+            user_message,
         )
 
     @Slot()
@@ -726,6 +832,47 @@ class Controller(QObject):
         self.thread = None
 
         self.set_processing_state(False)
+
+        should_continue = (
+            self.continue_queue_after_cleanup
+        )
+
+        self.continue_queue_after_cleanup = False
+        self.current_queue_item = None
+
+        has_waiting_item = any(
+            item.status
+            is ProcessingQueueStatus.WAITING
+            for item in self.processing_queue.items
+        )
+
+        if should_continue and has_waiting_item:
+            QTimer.singleShot(
+                0,
+                self.start_processing,
+            )
+        elif should_continue:
+            completed_count = sum(
+                item.status
+                is ProcessingQueueStatus.COMPLETED
+                for item in self.processing_queue.items
+            )
+
+            failed_count = sum(
+                item.status
+                is ProcessingQueueStatus.FAILED
+                for item in self.processing_queue.items
+            )
+
+            QMessageBox.information(
+                self.window,
+                "佇列處理結束",
+                (
+                    "所有等待中的影片均已處理。\n\n"
+                    f"完成：{completed_count} 支\n"
+                    f"失敗：{failed_count} 支"
+                ),
+            )
 
     def set_processing_state(self, processing):
         """切換處理期間的按鈕及輸入欄位狀態。"""

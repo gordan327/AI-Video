@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 
 ---
+
+## [1.1.0] - 2026-08-01
+
+### Added
+
+- Added a multi-video processing queue.
+- Added automatic continuation after each queued video completes.
+- Added queue item status tracking for waiting, processing, completed, failed, and cancelled states.
+- Added a final queue summary showing completed and failed counts.
+- Added five automated controller tests for queue processing behavior.
+
+### Changed
+
+- Simplified failure dialogs while retaining full technical details in the execution log.
+- Allowed batch processing to continue after an individual video fails.
+
+### Verified
+
+- Verified successful sequential processing of multiple videos.
+- Verified that one failed video does not interrupt the remaining queue.
+- Verified all 153 automated tests.
+
+---
+
 ## [1.0.1] - 2026-07-28
 
 ### Changed

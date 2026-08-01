@@ -2,13 +2,13 @@
 
 ## Current Version
 
-1.0.1
+1.1.0
 
 ---
 
 ## Current Status
 
-Version 1.0.1 has been officially released.
+Version 1.1.0 has been officially released.
 
 The source release, macOS desktop application, and Windows portable
 distribution have completed their respective verification steps.

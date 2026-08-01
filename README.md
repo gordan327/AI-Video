@@ -203,7 +203,7 @@ make test
 
 Current project status:
 
-- ✅ 126 automated tests
+- ✅ 153 automated tests
 - ✅ Editable installation
 - ✅ GUI application
 - ✅ CLI application

@@ -115,6 +115,24 @@ class ProcessingQueue:
 
         return True
 
+    def mark_cancelled(
+        self,
+        item: ProcessingQueueItem,
+    ) -> bool:
+        """將處理中的項目標記為已取消。"""
+
+        if (
+            item not in self._items
+            or item.status
+            is not ProcessingQueueStatus.PROCESSING
+        ):
+            return False
+
+        item.status = ProcessingQueueStatus.CANCELLED
+        item.error_message = None
+
+        return True
+
     def cancel(
         self,
         item: ProcessingQueueItem,
