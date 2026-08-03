@@ -29,3 +29,66 @@ jobs:
 
       - name: Run tests
         run: python -m pytest -q
+
+  build-windows:
+    needs: test-windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Upgrade pip & install Nuitka
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install nuitka
+
+      - name: Install FFmpeg via Chocolatey
+        run: choco install ffmpeg -y
+
+      - name: Install Project Dependencies
+        run: python -m pip install -e .
+
+      - name: Build Windows Executable with Nuitka (Slim Version)
+        shell: powershell
+        run: |
+          $env:PYTHONUTF8 = "1"
+          $FFMPEG_PATH = (Get-Command ffmpeg.exe).Source
+          Write-Host "FFmpeg 檔案位置: $FFMPEG_PATH"
+
+          python -m nuitka `
+            --standalone `
+            --windows-disable-console `
+            --enable-plugin=pyside6 `
+            --include-package=scipy `
+            --include-data-dir=src/ai_video/config=ai_video/config `
+            --include-data-files="$FFMPEG_PATH=ffmpeg.exe" `
+            --output-dir=dist `
+            --nofollow-import-to=torch `
+            --nofollow-import-to=torchvision `
+            --nofollow-import-to=pytest `
+            --nofollow-import-to=matplotlib `
+            --nofollow-import-to=fonttools `
+            --nofollow-import-to=contourpy `
+            --nofollow-import-to=kiwisolver `
+            --nofollow-import-to=cycler `
+            --nofollow-import-to=nvidia_ml_py `
+            --nofollow-import-to=IPython `
+            --nofollow-import-to=notebook `
+            src/ai_video/gui/app.py
+
+      - name: Compress Build Output
+        shell: powershell
+        run: |
+          Compress-Archive -Path dist/app.dist/* -DestinationPath AI-Video-Windows-x64.zip
+
+      - name: Upload Windows Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AI-Video-Windows-x64
+          path: AI-Video-Windows-x64.zip
