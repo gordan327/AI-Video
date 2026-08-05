@@ -73,7 +73,8 @@ jobs:
 
           python -m nuitka `
             --standalone `
-            --windows-disable-console `
+            --assume-yes-for-downloads `
+            --windows-console-mode=disable `
             --enable-plugin=pyside6 `
             --include-package=scipy `
             --include-data-dir=src/ai_video/config=ai_video/config `
