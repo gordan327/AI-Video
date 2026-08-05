@@ -31,6 +31,39 @@ jobs:
       - name: Run tests
         run: python -m pytest -q
 
+name: Windows Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'develop/*'
+
+jobs:
+  test-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install project
+        run: |
+          python -m pip install -e .
+          python -m pip install pytest
+
+      - name: Run tests
+        run: python -m pytest -q
+
   build-windows:
     needs: test-windows
     runs-on: windows-latest
@@ -47,7 +80,7 @@ jobs:
       - name: Upgrade pip & install Nuitka
         run: |
           python -m pip install --upgrade pip
-          python -m pip install nuitka
+          python -m pip install nuitka zstandard
 
       - name: Install FFmpeg & Inno Setup via Chocolatey
         run: |
@@ -74,6 +107,8 @@ jobs:
           python -m nuitka `
             --standalone `
             --assume-yes-for-downloads `
+            --jobs=2 `
+            --low-memory `
             --windows-console-mode=disable `
             --enable-plugin=pyside6 `
             --include-package=scipy `
