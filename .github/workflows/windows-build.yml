@@ -1,4 +1,37 @@
-build-windows:
+name: Windows Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'develop/*'
+
+jobs:
+  test-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install project
+        run: |
+          python -m pip install -e .
+          python -m pip install pytest
+
+      - name: Run tests
+        run: python -m pytest -q
+
+  build-windows:
     needs: test-windows
     runs-on: windows-latest
 
@@ -16,19 +49,27 @@ build-windows:
           python -m pip install --upgrade pip
           python -m pip install nuitka
 
-      - name: Install FFmpeg via Chocolatey
-        run: choco install ffmpeg -y
+      - name: Install FFmpeg & Inno Setup via Chocolatey
+        run: |
+          choco install ffmpeg -y
+          choco install innosetup -y
 
-      - name: Install Lightweight Dependencies (No PyTorch)
+      - name: Install Lightweight Dependencies
         run: |
           python -m pip install onnxruntime opencv-python PySide6 scipy pyyaml ultralytics
 
-      - name: Build Windows Executable with Nuitka (Slim Version)
+      - name: Build Windows Executable with Nuitka
         shell: powershell
         run: |
           $env:PYTHONUTF8 = "1"
           $FFMPEG_PATH = (Get-Command ffmpeg.exe).Source
-          Write-Host "FFmpeg 檔案位置: $FFMPEG_PATH"
+          Write-Host "FFmpeg Location: $FFMPEG_PATH"
+
+          # 判斷是否有 ico 圖示，有則掛載
+          $ICON_ARG = ""
+          if (Test-Path "assets/icon.ico") {
+              $ICON_ARG = "--windows-icon-from-ico=assets/icon.ico"
+          }
 
           python -m nuitka `
             --standalone `
@@ -37,6 +78,7 @@ build-windows:
             --include-package=scipy `
             --include-data-dir=src/ai_video/config=ai_video/config `
             --include-data-files="$FFMPEG_PATH=ffmpeg.exe" `
+            $ICON_ARG `
             --output-dir=dist `
             --nofollow-import-to=torch `
             --nofollow-import-to=torchvision `
@@ -53,13 +95,39 @@ build-windows:
             --nofollow-import-to=notebook `
             src/ai_video/gui/app.py
 
-      - name: Compress Build Output
+      - name: Create Inno Setup Script & Build Windows Installer (.exe)
         shell: powershell
         run: |
-          Compress-Archive -Path dist/app.dist/* -DestinationPath AI-Video-Windows-x64.zip
+          $issContent = @"
+          [Setup]
+          AppName=AI-Video
+          AppVersion=1.1.0
+          DefaultDirName={autopf}\AI-Video
+          DefaultGroupName=AI-Video
+          UninstallDisplayIcon={app}\app.exe
+          Compression=lzma2/ultra64
+          SolidCompression=yes
+          OutputDir=dist_installer
+          OutputBaseFilename=AI-Video-Windows-Installer
 
-      - name: Upload Windows Build Artifact
+          [Tasks]
+          Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
+
+          [Files]
+          Source: "dist\app.dist\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+          [Icons]
+          Name: "{group}\AI-Video"; Filename: "{app}\app.exe"
+          Name: "{autodesktop}\AI-Video"; Filename: "{app}\app.exe"; Tasks: desktopicon
+
+          [Run]
+          Filename: "{app}\app.exe"; Description: "{cm:LaunchProgram,AI-Video}"; Flags: nowait postinstall skipifsilent
+          "@
+          Set-Content -Path "installer.iss" -Value $issContent
+          ISCC.exe installer.iss
+
+      - name: Upload Windows Installer (.exe)
         uses: actions/upload-artifact@v4
         with:
-          name: AI-Video-Windows-x64
-          path: AI-Video-Windows-x64.zip
+          name: AI-Video-Windows-Installer
+          path: dist_installer/AI-Video-Windows-Installer.exe
