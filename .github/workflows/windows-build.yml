@@ -58,7 +58,7 @@ jobs:
         run: |
           python -m pip install onnxruntime opencv-python PySide6 scipy pyyaml ultralytics
 
-      - name: Build Windows Executable with Nuitka
+      - name: Build Windows Executable with Nuitka    
         shell: powershell
         run: |
           $env:PYTHONUTF8 = "1"
@@ -76,25 +76,20 @@ jobs:
             --assume-yes-for-downloads `
             --jobs=2 `
             --low-memory `
-            --windows-console-mode=disable `
+            --windows-console-mode=force `
             --enable-plugin=pyside6 `
+            --include-qt-plugins=sensible,platforms `
             --include-package=scipy `
             --include-data-dir=src/ai_video/config=ai_video/config `
             --include-data-files="$FFMPEG_PATH=ffmpeg.exe" `
             $ICON_ARG `
             --output-dir=dist `
-            --nofollow-import-to=sympy `
             --nofollow-import-to=torch `
             --nofollow-import-to=torchvision `
             --nofollow-import-to=torchaudio `
             --nofollow-import-to=triton `
             --nofollow-import-to=pytest `
             --nofollow-import-to=matplotlib `
-            --nofollow-import-to=fonttools `
-            --nofollow-import-to=contourpy `
-            --nofollow-import-to=kiwisolver `
-            --nofollow-import-to=cycler `
-            --nofollow-import-to=nvidia_ml_py `
             --nofollow-import-to=IPython `
             --nofollow-import-to=notebook `
             src/ai_video/gui/app.py
