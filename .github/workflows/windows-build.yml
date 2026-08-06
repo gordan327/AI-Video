@@ -83,6 +83,7 @@ jobs:
             --include-data-files="$FFMPEG_PATH=ffmpeg.exe" `
             $ICON_ARG `
             --output-dir=dist `
+            --nofollow-import-to=sympy `
             --nofollow-import-to=torch `
             --nofollow-import-to=torchvision `
             --nofollow-import-to=torchaudio `
