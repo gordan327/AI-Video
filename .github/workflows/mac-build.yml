@@ -47,6 +47,7 @@ jobs:
           python -m nuitka \
             --standalone \
             --macos-create-app-bundle \
+            --macos-app-name="AI-Video" \
             $ICON_ARG \
             --enable-plugin=pyside6 \
             --include-package=ai_video \
@@ -71,6 +72,10 @@ jobs:
             --nofollow-import-to=notebook \
             src/ai_video/gui/app.py
 
+      - name: Ad-hoc Code Sign .app Bundle
+        run: |
+          codesign --force --deep --sign - "dist/AI-Video.app"
+
       - name: Create Drag-and-Drop .dmg Package
         run: |
           mkdir -p dist_dmg
@@ -80,11 +85,11 @@ jobs:
             --window-pos 200 120 \
             --window-size 600 400 \
             --icon-size 100 \
-            --icon "app.app" 175 120 \
-            --hide-extension "app.app" \
+            --icon "AI-Video.app" 175 120 \
+            --hide-extension "AI-Video.app" \
             --app-drop-link 425 120 \
             "dist_dmg/AI-Video-macOS.dmg" \
-            "dist/app.app"
+            "dist/AI-Video.app"
 
       - name: Upload macOS .dmg Artifact
         uses: actions/upload-artifact@v4
