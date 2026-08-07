@@ -82,6 +82,7 @@ jobs:
             --enable-plugin=pyside6 `
             --include-package=ai_video `
             --include-package=scipy `
+            --include-data-dir=src/ai_video/config=ai_video/config `
             --include-data-files="$FFMPEG_PATH=ffmpeg.exe" `
             $ICON_ARG `
             --output-dir=dist `
