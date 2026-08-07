@@ -72,6 +72,9 @@ jobs:
             --nofollow-import-to=notebook \
             src/ai_video/gui/app.py
 
+          # 將預設的 app.app 重新命名為 AI-Video.app
+          mv dist/app.app dist/AI-Video.app
+
       - name: Ad-hoc Code Sign .app Bundle
         run: |
           codesign --force --deep --sign - "dist/AI-Video.app"
