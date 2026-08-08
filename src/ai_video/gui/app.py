@@ -1,23 +1,35 @@
 import os
 import sys
 
-# ----------------- 1. 強制 UTF-8 與非 ASCII 路徑修復 -----------------
-# 確保在 macOS 雙擊時，包含中文的路徑不會觸發 UnicodeEncodeError
+# ----------------- 1. 強制 macOS/Windows 全域 UTF-8 語系編碼修復 -----------------
+# 解決 macOS Finder 雙擊開啟時 LANG / LC_ALL 預設為 C/ASCII 導致中文路徑崩潰問題
 os.environ["PYTHONIOENCODING"] = "utf-8"
+os.environ["PYTHONUTF8"] = "1"
+
+if sys.version_info[0] == 3:
+    import importlib
+    importlib.reload(sys)
+
+try:
+    if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
+    if sys.stderr and hasattr(sys.stderr, 'reconfigure'):
+        sys.stderr.reconfigure(encoding='utf-8')
+except Exception:
+    pass
 
 if getattr(sys, 'frozen', False) or "__compiled__" in globals():
     try:
-        # 使用系統檔案編碼安全解碼路徑
         raw_path = sys.executable if hasattr(sys, 'executable') else sys.argv[0]
         if isinstance(raw_path, bytes):
-            raw_path = raw_path.decode(sys.getfilesystemencoding() or 'utf-8')
+            raw_path = raw_path.decode(sys.getfilesystemencoding() or 'utf-8', errors='ignore')
         
         executable_path = os.path.realpath(raw_path)
         bundle_dir = os.path.dirname(executable_path)
         os.chdir(bundle_dir)
     except Exception:
         pass
-# ------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -33,35 +45,27 @@ from ai_video.gui.main_window import MainWindow
 
 
 def setup_responsive_window(window: MainWindow):
-    """
-    動態調整視窗大小以適應目前螢幕解析度，並包覆捲軸保護低解析度螢幕。
-    """
-    # 1. 取得主螢幕的可用區域大小 (扣除工作列/Taskbar)
+    """動態調整視窗大小以適應目前螢幕解析度，並包覆捲軸保護低解析度螢幕。"""
     screen = QApplication.primaryScreen().availableGeometry()
     screen_width = screen.width()
     screen_height = screen.height()
 
-    # 預設視窗大小設為螢幕寬高的 80% (避免超出螢幕)
     default_width = int(screen_width * 0.8)
     default_height = int(screen_height * 0.8)
 
-    # 2. 為中央區塊加上 QScrollArea (當視窗縮小或螢幕太小時代替捲軸)
     central_widget = window.centralWidget()
     if central_widget and not isinstance(central_widget, QScrollArea):
         scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)  # 讓內容自動隨視窗縮放
+        scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(central_widget)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        
-        # 移除 ScrollArea 的邊框外觀，保持介面簡潔
         scroll_area.setStyleSheet("QScrollArea { border: none; }")
         
         window.setCentralWidget(scroll_area)
 
-    # 3. 設定預設大小與允許最低極限
     window.resize(default_width, default_height)
-    window.setMinimumSize(800, 600)  # 設定最小可縮小尺寸，防止介面過度擠壓
+    window.setMinimumSize(800, 600)
 
 
 def main():
@@ -81,16 +85,20 @@ def main():
         )
         return 1
     except Exception as error:
+        # 確保 error 轉化為字串時不會觸發 ASCII 編碼失敗
+        error_msg = str(error)
+        if isinstance(error_msg, bytes):
+            error_msg = error_msg.decode('utf-8', errors='ignore')
+            
         QMessageBox.critical(
             None,
             "啟動錯誤",
-            f"應用程式啟動失敗：\n{str(error)}",
+            f"應用程式啟動失敗：\n{error_msg}",
         )
         return 1
 
     window.controller = controller
 
-    # 響應式螢幕自適應與捲軸防護
     setup_responsive_window(window)
 
     window.show()
