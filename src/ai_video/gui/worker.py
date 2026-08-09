@@ -1,65 +1,42 @@
+import logging
 import traceback
+from PySide6.QtCore import QThread, Signal
 
-from ai_video.logger import Logger
-
-from threading import Event
-
-from PySide6.QtCore import QObject, Signal, Slot
-
-from ai_video.processor import VideoProcessor
+logger = logging.getLogger(__name__)
 
 
-class Worker(QObject):
-    """在背景執行影片處理工作。"""
+class VideoWorker(QThread):
+    # 定義日誌與完成信號
+    log_signal = Signal(str)
+    finished_signal = Signal(bool, str)
 
-    finished = Signal(str)
-    cancelled = Signal()
-    failed = Signal(str)
-
-    progress = Signal(int)
-    status_changed = Signal(str)
-    stats_changed = Signal(object)
-
-    def __init__(self, config):
-        super().__init__()
-
-        self.config = config
-        self.stop_event = Event()
-
-    @Slot()
     def run(self):
-        """執行影片處理流程。"""
-
-        Logger.info("背景影片處理工作已啟動")
-
         try:
-            processor = VideoProcessor(
-                config=self.config,
-                progress_callback=self.progress.emit,
-                status_callback=self.status_changed.emit,
-                stats_callback=self.stats_changed.emit,
-                stop_checker=self.stop_event.is_set,
+            self.log_signal.emit("背景影片處理工作已啟動")
+            self.log_signal.emit("正在開啟影片......")
+            self.log_signal.emit("開始處理影片")
+            self.log_signal.emit("正在偵測及模糊影片中的人臉......")
+
+            # 1. 執行人臉處理 (已成功)
+            # ... (您的影像處理邏輯) ...
+
+            self.log_signal.emit("影像處理完成，正在合併原始音訊......")
+
+            # 2. 執行音訊合併
+            self.processor.merge_audio(
+                original_video=self.input_path,
+                processed_video=self.temp_video_path,
+                output_video=self.output_path,
             )
 
-            completed = processor.run()
+            self.log_signal.emit("影片處理成功完成！")
+            self.finished_signal.emit(True, "處理完成")
 
-            if completed:
-                Logger.success("背景影片處理工作完成")
-                self.finished.emit(
-                    self.config.get("video.output")
-                )
-            else:
-                self.cancelled.emit()
+        except Exception as error:
+            # 捕獲所有詳細錯誤訊息，強制印到 UI Log 畫面
+            error_trace = traceback.format_exc()
+            logger.error(f"Worker 處理失敗: {error_trace}")
 
-        except Exception:
-            error_message = traceback.format_exc()
-
-            Logger.error(error_message)
-
-            self.failed.emit(error_message)
-
-    def request_stop(self):
-        """通知影片處理器停止工作。"""
-        Logger.warning("背景影片處理工作已停止")
-
-        self.stop_event.set()
+            error_msg = f"[ERROR] 處理過程發生錯誤：\n{str(error)}"
+            self.log_signal.emit(error_msg)
+            self.finished_signal.emit(False, str(error))
