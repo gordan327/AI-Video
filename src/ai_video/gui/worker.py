@@ -40,3 +40,6 @@ class VideoWorker(QThread):
             error_msg = f"[ERROR] 處理過程發生錯誤：\n{str(error)}"
             self.log_signal.emit(error_msg)
             self.finished_signal.emit(False, str(error))
+
+# 相容性設定：允許透過 Worker 或 VideoWorker 匯入
+Worker = VideoWorker
