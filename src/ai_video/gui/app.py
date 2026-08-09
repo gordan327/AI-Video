@@ -68,43 +68,36 @@ def setup_responsive_window(window: MainWindow):
     window.setMinimumSize(800, 600)
 
 
+import traceback
+import sys
+from PySide6.QtWidgets import QApplication, QMessageBox
+from ai_video.gui.main_window import MainWindow
+from ai_video.gui.controller import Controller
+
 def main():
     """啟動 AI-Video GUI。"""
-
     app = QApplication(sys.argv)
 
-    window = MainWindow()
-
     try:
+        window = MainWindow()
         controller = Controller(window)
-    except ConfigurationError as error:
-        QMessageBox.critical(
-            window,
-            "設定檔錯誤",
-            str(error),
-        )
-        return 1
+        window.controller = controller
+        
+        # 載入自適應視窗設定
+        setup_responsive_window(window)
+        
+        window.show()
+        return app.exec()
+
     except Exception as error:
-        # 確保 error 轉化為字串時不會觸發 ASCII 編碼失敗
-        error_msg = str(error)
-        if isinstance(error_msg, bytes):
-            error_msg = error_msg.decode('utf-8', errors='ignore')
-            
+        # 捕捉所有初始化時的崩潰，並以視窗彈窗強制印出 Traceback
+        error_details = traceback.format_exc()
         QMessageBox.critical(
             None,
-            "啟動錯誤",
-            f"應用程式啟動失敗：\n{error_msg}",
+            "程式啟動崩潰",
+            f"AI-Video 在啟動時發生嚴重錯誤：\n\n{error_details}"
         )
         return 1
-
-    window.controller = controller
-
-    setup_responsive_window(window)
-
-    window.show()
-
-    return app.exec()
-
 
 if __name__ == "__main__":
     sys.exit(main())

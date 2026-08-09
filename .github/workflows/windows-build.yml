@@ -78,7 +78,7 @@ jobs:
             --assume-yes-for-downloads `
             --jobs=2 `
             --low-memory `
-            --windows-console-mode=disable `
+            --windows-console-mode=force `
             --enable-plugin=pyside6 `
             --include-package=ai_video `
             --include-package=scipy `
