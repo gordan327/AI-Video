@@ -15,7 +15,7 @@ from ai_video.gui.processing_queue import (
 )
 from ai_video.gui.processing_state_manager import ProcessingStateManager
 from ai_video.gui.video_path_manager import VideoPathManager
-from ai_video.gui.worker import Worker
+from ai_video.gui.worker import VideoWorker
 from ai_video.logger import Logger
 
 
@@ -576,7 +576,7 @@ class Controller(QObject):
         """建立背景執行緒與 Worker。"""
 
         self.thread = QThread()
-        self.worker = Worker(config)
+        self.worker = VideoWorker(config)
 
         self.worker.moveToThread(self.thread)
 

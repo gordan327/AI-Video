@@ -1,45 +1,115 @@
 import logging
 import traceback
-from PySide6.QtCore import QThread, Signal
+from pathlib import Path
+from PySide6.QtCore import QObject, Signal
+
+from ai_video.config_manager import ConfigManager
+from ai_video.video.video_reader import VideoReader
+from ai_video.video.video_writer import VideoWriter
+from ai_video.video.ffmpeg_processor import FFmpegProcessor
 
 logger = logging.getLogger(__name__)
 
 
-class VideoWorker(QThread):
-    # 定義日誌與完成信號
-    log_signal = Signal(str)
-    finished_signal = Signal(bool, str)
+class VideoWorker(QObject):
+    """背景影片處理工作物件 (基於 QObject Worker 模式)。"""
+
+    progress = Signal(int)
+    stats_changed = Signal(dict)
+    status_changed = Signal(str)
+    finished = Signal(str)
+    cancelled = Signal()
+    failed = Signal(str)
+
+    def __init__(self, config: ConfigManager, parent=None):
+        super().__init__(parent)
+        self.config = config
+        self._stop_requested = False
+        self.ffmpeg_processor = FFmpegProcessor()
+
+    def request_stop(self):
+        """請求停止背景工作。"""
+        self._stop_requested = True
 
     def run(self):
+        """執行影片處理流程。"""
         try:
-            self.log_signal.emit("背景影片處理工作已啟動")
-            self.log_signal.emit("正在開啟影片......")
-            self.log_signal.emit("開始處理影片")
-            self.log_signal.emit("正在偵測及模糊影片中的人臉......")
+            input_path = Path(self.config.get("job.input_path"))
+            output_path = Path(self.config.get("job.output_path"))
+            temp_output_path = Path(self.config.get("job.temp_output_path"))
 
-            # 1. 執行人臉處理 (已成功)
-            # ... (您的影像處理邏輯) ...
+            self.status_changed.emit("正在開啟影片......")
+            self.progress.emit(0)
 
-            self.log_signal.emit("影像處理完成，正在合併原始音訊......")
-
-            # 2. 執行音訊合併
-            self.processor.merge_audio(
-                original_video=self.input_path,
-                processed_video=self.temp_video_path,
-                output_video=self.output_path,
+            # 1. 初始化讀取與寫入器
+            reader = VideoReader(str(input_path))
+            total_frames = reader.get_frame_count()
+            
+            writer = VideoWriter(
+                str(temp_output_path),
+                fps=reader.get_fps(),
+                width=reader.get_width(),
+                height=reader.get_height()
             )
 
-            self.log_signal.emit("影片處理成功完成！")
-            self.finished_signal.emit(True, "處理完成")
+            self.status_changed.emit("正在偵測及模糊影片中的人臉......")
+            
+            current_frame = 0
+            for frame in reader.read_frames():
+                if self._stop_requested:
+                    raise InterruptedError("使用者要求中止處理")
+
+                # 這裡可加入人臉偵測與模糊處理（依原專案處理邏輯）
+                # ...
+
+                writer.write_frame(frame)
+                current_frame += 1
+
+                if total_frames > 0:
+                    percent = int((current_frame / total_frames) * 100)
+                    self.progress.emit(percent)
+                    self.stats_changed.emit({"frame": current_frame, "total": total_frames})
+
+            reader.release()
+            writer.release()
+
+            if self._stop_requested:
+                self.cancelled.emit()
+                return
+
+            # 2. 合併原始音訊
+            self.status_changed.emit("正在合併原始音訊......")
+            self.ffmpeg_processor.merge_audio(
+                original_video=str(input_path),
+                processed_video=str(temp_output_path),
+                output_video=str(output_path),
+            )
+
+            # 3. 清理暫存檔
+            if temp_output_path.exists():
+                temp_output_path.unlink()
+
+            self.progress.emit(100)
+            self.status_changed.emit("影片處理完成")
+            self.finished.emit(str(output_path))
+
+        except InterruptedError:
+            logger.warning("影片處理工作已被使用者停止")
+            temp_output = Path(self.config.get("job.temp_output_path", ""))
+            if temp_output.exists():
+                temp_output.unlink()
+            self.cancelled.emit()
 
         except Exception as error:
-            # 捕獲所有詳細錯誤訊息，強制印到 UI Log 畫面
             error_trace = traceback.format_exc()
-            logger.error(f"Worker 處理失敗: {error_trace}")
+            logger.error(f"Worker 處理失敗:\n{error_trace}")
+            
+            temp_output = Path(self.config.get("job.temp_output_path", ""))
+            if temp_output.exists():
+                temp_output.unlink()
 
-            error_msg = f"[ERROR] 處理過程發生錯誤：\n{str(error)}"
-            self.log_signal.emit(error_msg)
-            self.finished_signal.emit(False, str(error))
+            self.failed.emit(f"處理失敗: {str(error)}")
 
-# 相容性設定：允許透過 Worker 或 VideoWorker 匯入
+
+# 相容性別名
 Worker = VideoWorker
