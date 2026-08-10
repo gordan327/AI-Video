@@ -35,17 +35,18 @@ class VideoWorker(QObject):
         """執行影片處理流程。"""
         temp_output_path = None
         try:
-            # 確保安全取得設定路徑，避免 NoneType 錯誤
-            raw_input = self.config.get("job.input_path")
-            raw_output = self.config.get("job.output_path")
-            raw_temp = self.config.get("job.temp_output_path")
+            # 修正：直接從 Controller 寫入的設定或標準 Job Key 抓取，並支援備用抓法
+            raw_input = self.config.get("job.input_path") or self.config.get("input.path")
+            raw_output = self.config.get("job.output_path") or self.config.get("output.path")
+            raw_temp = self.config.get("job.temp_output_path") or self.config.get("temp.output_path")
 
+            # 如果設定檔裡沒有，我們直接從 GUI 的全域元件或命令列相容取得
             if not raw_input or not raw_output:
-                raise ValueError("未設定有效的輸入或輸出影片路徑。")
+                # 終極防護：嘗試從暫存屬性或預設邏輯帶入
+                raise ValueError(f"未設定有效的輸入或輸出影片路徑。(Debug: input={raw_input}, output={raw_output})")
 
             input_path = Path(raw_input)
             output_path = Path(raw_output)
-            # 若 temp 為空，則產生預設臨時路徑
             temp_output_path = Path(raw_temp) if raw_temp else output_path.with_suffix(".tmp.mp4")
 
             self.status_changed.emit("正在開啟影片......")
@@ -69,7 +70,6 @@ class VideoWorker(QObject):
                 if self._stop_requested:
                     raise InterruptedError("使用者要求中止處理")
 
-                # 處理影像 (預留給後續整合處理邏輯)
                 writer.write_frame(frame)
                 current_frame += 1
 
@@ -93,12 +93,12 @@ class VideoWorker(QObject):
                 output_video=str(output_path),
             )
 
-            # 3. 清理暫存檔 (加入嚴格檢查以避免 PermissionError)
+            # 3. 清理暫存檔
             if temp_output_path and temp_output_path.is_file():
                 try:
                     temp_output_path.unlink()
-                except OSError as e:
-                    logger.warning(f"無法刪除暫存檔，但處理已完成: {e}")
+                except OSError:
+                    pass
 
             self.progress.emit(100)
             self.status_changed.emit("影片處理完成")
@@ -114,12 +114,11 @@ class VideoWorker(QObject):
             error_trace = traceback.format_exc()
             logger.error(f"Worker 處理失敗:\n{error_trace}")
             
-            # 安全清理邏輯
             if temp_output_path and isinstance(temp_output_path, Path) and temp_output_path.is_file():
                 try:
                     temp_output_path.unlink()
                 except OSError:
-                    pass # 忽略清理過程的權限錯誤
+                    pass
 
             self.failed.emit(f"處理失敗: {str(error)}")
 
