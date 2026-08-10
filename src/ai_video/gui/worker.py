@@ -3,7 +3,6 @@ import traceback
 from pathlib import Path
 from PySide6.QtCore import QObject, Signal
 
-from ai_video.config_manager import ConfigManager
 from ai_video.video.video_reader import VideoReader
 from ai_video.video.video_writer import VideoWriter
 from ai_video.video.ffmpeg_processor import FFmpegProcessor
@@ -12,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class VideoWorker(QObject):
-    """背景影片處理工作物件 (基於 QObject Worker 模式)。"""
+    """背景影片處理工作物件 (直接接收明確路徑參數)。"""
 
     progress = Signal(int)
     stats_changed = Signal(dict)
@@ -21,9 +20,11 @@ class VideoWorker(QObject):
     cancelled = Signal()
     failed = Signal(str)
 
-    def __init__(self, config: ConfigManager, parent=None):
+    def __init__(self, input_path: str, output_path: str, temp_output_path: str = None, parent=None):
         super().__init__(parent)
-        self.config = config
+        self.input_path_str = input_path
+        self.output_path_str = output_path
+        self.temp_output_path_str = temp_output_path
         self._stop_requested = False
         self.ffmpeg_processor = FFmpegProcessor()
 
@@ -35,19 +36,12 @@ class VideoWorker(QObject):
         """執行影片處理流程。"""
         temp_output_path = None
         try:
-            # 修正：直接從 Controller 寫入的設定或標準 Job Key 抓取，並支援備用抓法
-            raw_input = self.config.get("job.input_path") or self.config.get("input.path")
-            raw_output = self.config.get("job.output_path") or self.config.get("output.path")
-            raw_temp = self.config.get("job.temp_output_path") or self.config.get("temp.output_path")
+            if not self.input_path_str or not self.output_path_str:
+                raise ValueError("未設定有效的輸入或輸出影片路徑。")
 
-            # 如果設定檔裡沒有，我們直接從 GUI 的全域元件或命令列相容取得
-            if not raw_input or not raw_output:
-                # 終極防護：嘗試從暫存屬性或預設邏輯帶入
-                raise ValueError(f"未設定有效的輸入或輸出影片路徑。(Debug: input={raw_input}, output={raw_output})")
-
-            input_path = Path(raw_input)
-            output_path = Path(raw_output)
-            temp_output_path = Path(raw_temp) if raw_temp else output_path.with_suffix(".tmp.mp4")
+            input_path = Path(self.input_path_str)
+            output_path = Path(self.output_path_str)
+            temp_output_path = Path(self.temp_output_path_str) if self.temp_output_path_str else output_path.with_suffix(".tmp.mp4")
 
             self.status_changed.emit("正在開啟影片......")
             self.progress.emit(0)
@@ -107,7 +101,10 @@ class VideoWorker(QObject):
         except InterruptedError:
             logger.warning("影片處理工作已被使用者停止")
             if temp_output_path and isinstance(temp_output_path, Path) and temp_output_path.is_file():
-                temp_output_path.unlink()
+                try:
+                    temp_output_path.unlink()
+                except OSError:
+                    pass
             self.cancelled.emit()
 
         except Exception as error:

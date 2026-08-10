@@ -187,7 +187,7 @@ class Controller(QObject):
         ProcessingConfiguration.apply(config=self.config, job=job)
         self.processing_started_at = perf_counter()
         self.log_processing_session_start(job.input_path, job.output_path)
-        self.start_worker(self.config)
+        self.start_worker(job)
 
     def log_processing_session_start(self, input_path, output_path):
         started_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -208,10 +208,14 @@ class Controller(QObject):
         self.add_log(self.SESSION_SEPARATOR)
         self.processing_started_at = None
 
-    def start_worker(self, config):
-        """建立背景執行緒與 Worker（維持原始 Config 架構以相容 153 個單元測試）。"""
+    def start_worker(self, job):
+        """建立背景執行緒與 Worker，直接傳入明確的 job 路徑參數。"""
         self.thread = QThread()
-        self.worker = VideoWorker(config)
+        self.worker = VideoWorker(
+            input_path=str(job.input_path),
+            output_path=str(job.output_path),
+            temp_output_path=str(job.temp_output_path)
+        )
         self.worker.moveToThread(self.thread)
 
         self.thread.started.connect(self.worker.run)
