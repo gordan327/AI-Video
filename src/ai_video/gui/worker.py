@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class VideoWorker(QObject):
-    """背景影片處理工作物件 (直接接收明確路徑參數)。"""
+    """背景影片處理工作物件 (修復 VideoReader 屬性呼叫)。"""
 
     progress = Signal(int)
     stats_changed = Signal(dict)
@@ -46,15 +46,18 @@ class VideoWorker(QObject):
             self.status_changed.emit("正在開啟影片......")
             self.progress.emit(0)
 
-            # 1. 初始化讀取與寫入器
+            # 1. 初始化讀取與寫入器（修正為正確的屬性對應）
             reader = VideoReader(str(input_path))
-            total_frames = reader.get_frame_count()
+            total_frames = getattr(reader, "frame_count", 0)
+            fps = getattr(reader, "fps", 30)
+            width = getattr(reader, "width", 1920)
+            height = getattr(reader, "height", 1080)
             
             writer = VideoWriter(
                 str(temp_output_path),
-                fps=reader.get_fps(),
-                width=reader.get_width(),
-                height=reader.get_height()
+                fps=fps,
+                width=width,
+                height=height
             )
 
             self.status_changed.emit("正在偵測及模糊影片中的人臉......")
@@ -72,8 +75,10 @@ class VideoWorker(QObject):
                     self.progress.emit(percent)
                     self.stats_changed.emit({"frame": current_frame, "total": total_frames})
 
-            reader.release()
-            writer.release()
+            if hasattr(reader, "release"):
+                reader.release()
+            if hasattr(writer, "release"):
+                writer.release()
 
             if self._stop_requested:
                 self.cancelled.emit()
