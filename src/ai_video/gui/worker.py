@@ -33,10 +33,20 @@ class VideoWorker(QObject):
 
     def run(self):
         """執行影片處理流程。"""
+        temp_output_path = None
         try:
-            input_path = Path(self.config.get("job.input_path"))
-            output_path = Path(self.config.get("job.output_path"))
-            temp_output_path = Path(self.config.get("job.temp_output_path"))
+            # 確保安全取得設定路徑，避免 NoneType 錯誤
+            raw_input = self.config.get("job.input_path")
+            raw_output = self.config.get("job.output_path")
+            raw_temp = self.config.get("job.temp_output_path")
+
+            if not raw_input or not raw_output:
+                raise ValueError("未設定有效的輸入或輸出影片路徑。")
+
+            input_path = Path(raw_input)
+            output_path = Path(raw_output)
+            # 若 temp 為空，則產生預設臨時路徑
+            temp_output_path = Path(raw_temp) if raw_temp else output_path.with_suffix(".tmp.mp4")
 
             self.status_changed.emit("正在開啟影片......")
             self.progress.emit(0)
@@ -59,9 +69,7 @@ class VideoWorker(QObject):
                 if self._stop_requested:
                     raise InterruptedError("使用者要求中止處理")
 
-                # 這裡可加入人臉偵測與模糊處理（依原專案處理邏輯）
-                # ...
-
+                # 處理影像 (預留給後續整合處理邏輯)
                 writer.write_frame(frame)
                 current_frame += 1
 
@@ -85,9 +93,12 @@ class VideoWorker(QObject):
                 output_video=str(output_path),
             )
 
-            # 3. 清理暫存檔
-            if temp_output_path.exists():
-                temp_output_path.unlink()
+            # 3. 清理暫存檔 (加入嚴格檢查以避免 PermissionError)
+            if temp_output_path and temp_output_path.is_file():
+                try:
+                    temp_output_path.unlink()
+                except OSError as e:
+                    logger.warning(f"無法刪除暫存檔，但處理已完成: {e}")
 
             self.progress.emit(100)
             self.status_changed.emit("影片處理完成")
@@ -95,18 +106,20 @@ class VideoWorker(QObject):
 
         except InterruptedError:
             logger.warning("影片處理工作已被使用者停止")
-            temp_output = Path(self.config.get("job.temp_output_path", ""))
-            if temp_output.exists():
-                temp_output.unlink()
+            if temp_output_path and isinstance(temp_output_path, Path) and temp_output_path.is_file():
+                temp_output_path.unlink()
             self.cancelled.emit()
 
         except Exception as error:
             error_trace = traceback.format_exc()
             logger.error(f"Worker 處理失敗:\n{error_trace}")
             
-            temp_output = Path(self.config.get("job.temp_output_path", ""))
-            if temp_output.exists():
-                temp_output.unlink()
+            # 安全清理邏輯
+            if temp_output_path and isinstance(temp_output_path, Path) and temp_output_path.is_file():
+                try:
+                    temp_output_path.unlink()
+                except OSError:
+                    pass # 忽略清理過程的權限錯誤
 
             self.failed.emit(f"處理失敗: {str(error)}")
 
