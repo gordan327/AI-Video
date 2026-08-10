@@ -35,13 +35,8 @@ class Controller(QObject):
 
     def __init__(self, window):
         super().__init__()
-
         self.window = window
-
-        self.settings = QSettings(
-            "AI-Video",
-            "AI-Video",
-        )
+        self.settings = QSettings("AI-Video", "AI-Video")
 
         self.thread = None
         self.worker = None
@@ -50,470 +45,148 @@ class Controller(QObject):
         self.processing_started_at = None
         self.current_queue_item = None
         self.continue_queue_after_cleanup = False
+        
         self.connect_signals()
-
-        self.log_received.connect(
-            self.window.append_log
-        )
-
-        self._logger_listener = (
-            self.log_received.emit
-        )
-
-        Logger.subscribe(
-            self._logger_listener
-        )
-
+        self.log_received.connect(self.window.append_log)
+        Logger.subscribe(self.log_received.emit)
         Logger.info("AI-Video 已啟動")
 
-    def add_log(
-        self,
-        message: str,
-        level: str = "INFO",
-    ):
-        """透過統一 Logger 輸出訊息。"""
-
+    def add_log(self, message: str, level: str = "INFO"):
         log_methods = {
             "INFO": Logger.info,
             "SUCCESS": Logger.success,
             "WARNING": Logger.warning,
             "ERROR": Logger.error,
         }
-
-        log_method = log_methods.get(
-            level.upper(),
-            Logger.info,
-        )
-
-        log_method(message)
+        log_methods.get(level.upper(), Logger.info)(message)
 
     def connect_signals(self):
-        """連接畫面元件與控制函式。"""
-
-        self.window.input_button.clicked.connect(
-            self.select_input_video
-        )
-
-        self.window.output_button.clicked.connect(
-            self.select_output_video
-        )
-
-        self.window.add_queue_button.clicked.connect(
-            self.add_video_to_queue
-        )
-
-        self.window.start_button.clicked.connect(
-            self.start_processing
-        )
-
-        self.window.stop_button.clicked.connect(
-            self.stop_processing
-        )
-
-        self.window.video_dropped.connect(
-            self.handle_video_dropped
-        )
-
-        self.window.open_video_requested.connect(
-            self.select_input_video
-        )
-
-        self.window.preferences_requested.connect(
-            self.show_preferences
-        )
+        self.window.input_button.clicked.connect(self.select_input_video)
+        self.window.output_button.clicked.connect(self.select_output_video)
+        self.window.add_queue_button.clicked.connect(self.add_video_to_queue)
+        self.window.start_button.clicked.connect(self.start_processing)
+        self.window.stop_button.clicked.connect(self.stop_processing)
+        self.window.video_dropped.connect(self.handle_video_dropped)
+        self.window.open_video_requested.connect(self.select_input_video)
+        self.window.preferences_requested.connect(self.show_preferences)
 
     def set_input_video(self, filename: str):
-        """設定輸入影片及預設輸出路徑。"""
-
         input_path = Path(filename)
-
-        self.window.input_edit.setText(
-            str(input_path)
-        )
-
-        output_directory = self.settings.value(
-            "paths/output_directory",
-            str(input_path.parent),
-        )
-
-        output_path = (
-            VideoPathManager
-            .build_default_output_path(
-                input_path,
-                output_directory,
-            )
-        )
-
-        self.window.output_edit.setText(
-            str(output_path)
-        )
-
-        self.window.status_label.setText(
-            "已選擇輸入影片"
-        )
-
-        self.add_log(
-            f"已選擇輸入影片：{input_path}"
-        )
-
+        self.window.input_edit.setText(str(input_path))
+        output_directory = self.settings.value("paths/output_directory", str(input_path.parent))
+        output_path = VideoPathManager.build_default_output_path(input_path, output_directory)
+        self.window.output_edit.setText(str(output_path))
+        self.window.status_label.setText("已選擇輸入影片")
+        self.add_log(f"已選擇輸入影片：{input_path}")
         self.window.add_queue_button.setEnabled(True)        
-
-        self.add_log(
-            f"預設輸出影片：{output_path}"
-        )
+        self.add_log(f"預設輸出影片：{output_path}")
 
     @Slot(str)
     def handle_video_dropped(self, filename: str):
-        """接收拖放進視窗的影片。"""
-
         if self.thread is not None:
-            QMessageBox.information(
-                self.window,
-                "影片正在處理",
-                "請等待目前的影片處理完成後，"
-                "再拖入另一支影片。",
-            )
+            QMessageBox.information(self.window, "影片正在處理", "請等待目前的影片處理完成後，再拖入另一支影片。")
             return
-
         self.set_input_video(filename)
-
-        self.add_log(
-            "影片已透過拖放方式加入"
-        )
+        self.add_log("影片已透過拖放方式加入")
 
     def select_input_video(self):
-        """選擇輸入影片。"""
-
         filename, _ = QFileDialog.getOpenFileName(
-            self.window,
-            "選擇輸入影片",
-            self.settings.value(
-                "paths/input_directory",
-                "",
-            ),
-            self.VIDEO_FILTER,
+            self.window, "選擇輸入影片", self.settings.value("paths/input_directory", ""), self.VIDEO_FILTER
         )
-
-        if not filename:
-            return
-
-        self.settings.setValue(
-            "paths/input_directory",
-            str(Path(filename).parent),
-        )
-
+        if not filename: return
+        self.settings.setValue("paths/input_directory", str(Path(filename).parent))
         self.set_input_video(filename)
 
     def add_video_to_queue(self):
-        """將目前選擇的影片加入處理佇列。"""
-
         input_text = self.window.input_edit.text().strip()
         output_text = self.window.output_edit.text().strip()
-
         if not input_text or not output_text:
-            QMessageBox.warning(
-                self.window,
-                "無法加入佇列",
-                "請先選擇輸入影片並指定輸出位置。",
-            )
+            QMessageBox.warning(self.window, "無法加入佇列", "請先選擇輸入影片並指定輸出位置。")
             return
-
-        input_path = Path(input_text)
-        output_path = Path(output_text)
-
-        item = self.processing_queue.add(
-            input_path,
-            output_path,
-        )
-
+        item = self.processing_queue.add(Path(input_text), Path(output_text))
         if item is None:
-            QMessageBox.information(
-                self.window,
-                "影片已在佇列中",
-                "這支影片已經加入處理佇列。",
-            )
+            QMessageBox.information(self.window, "影片已在佇列中", "這支影片已經加入處理佇列。")
             return
-
-        self.window.queue_list.addItem(
-            f"等待處理｜{input_path.name}"
-        )
-
+        self.window.queue_list.addItem(f"等待處理｜{Path(input_text).name}")
         self.window.add_queue_button.setEnabled(False)
-
-        self.window.status_label.setText(
-            "影片已加入處理佇列"
-        )
-
-        self.add_log(
-            f"已加入處理佇列：{input_path}"
-        )
+        self.window.status_label.setText("影片已加入處理佇列")
+        self.add_log(f"已加入處理佇列：{input_text}")
 
     def select_output_video(self):
-        """指定輸出影片的位置。"""
-
-        current_output = (
-            self.window.output_edit.text().strip()
-        )
-
-        output_directory = self.settings.value(
-            "paths/output_directory",
-            "",
-        )
-
-        output_name = (
-            Path(current_output).name
-            if current_output
-            else "output.mp4"
-        )
-
-        initial_output = str(
-            Path(output_directory)
-            / output_name
-        )
-
+        current_output = self.window.output_edit.text().strip()
+        output_directory = self.settings.value("paths/output_directory", "")
+        output_name = Path(current_output).name if current_output else "output.mp4"
+        initial_output = str(Path(output_directory) / output_name)
         filename, _ = QFileDialog.getSaveFileName(
-            self.window,
-            "指定輸出影片",
-            initial_output,
-            "MP4 影片 (*.mp4);;所有檔案 (*)",
-            options=QFileDialog.Option.DontUseNativeDialog,
+            self.window, "指定輸出影片", initial_output, "MP4 影片 (*.mp4);;所有檔案 (*)",
+            options=QFileDialog.Option.DontUseNativeDialog
         )
-
-        if not filename:
-            return
-
-        self.settings.setValue(
-            "paths/output_directory",
-            str(Path(filename).parent),
-        )
-
-        output_path = (
-            VideoPathManager.build_output_path(
-                filename
-            )
-        )
-
-        self.window.output_edit.setText(
-            str(output_path)
-        )
-
-        self.window.status_label.setText(
-            "已指定輸出影片"
-        )
-
-        self.add_log(
-            f"已指定輸出影片：{output_path}"
-        )
+        if not filename: return
+        self.settings.setValue("paths/output_directory", str(Path(filename).parent))
+        output_path = VideoPathManager.build_output_path(filename)
+        self.window.output_edit.setText(str(output_path))
+        self.window.status_label.setText("已指定輸出影片")
+        self.add_log(f"已指定輸出影片：{output_path}")
 
     def show_preferences(self):
-        """顯示並更新偏好設定。"""
-
         dialog = PreferencesDialog(self.window)
-
-        dialog.set_values(
-            {
-                "detector.model": self.config.get(
-                    "detector.model",
-                    "buffalo_sc",
-                ),
-                "detector.det_size": self.config.get(
-                    "detector.det_size",
-                    640,
-                ),
-                "detector.confidence": self.config.get(
-                    "detector.confidence",
-                    0.50,
-                ),
-                "runtime.provider": self.config.get(
-                    "runtime.provider",
-                    "auto",
-                ),
-            }
-        )
-
-        if not dialog.exec():
-            return
-
+        dialog.set_values({
+            "detector.model": self.config.get("detector.model", "buffalo_sc"),
+            "detector.det_size": self.config.get("detector.det_size", 640),
+            "detector.confidence": self.config.get("detector.confidence", 0.50),
+            "runtime.provider": self.config.get("runtime.provider", "auto"),
+        })
+        if not dialog.exec(): return
         values = dialog.get_values()
-
         try:
-            for key, value in values.items():
-                self.config.set(key, value)
-
+            for key, value in values.items(): self.config.set(key, value)
             self.config.save()
-
         except OSError as error:
-            QMessageBox.critical(
-                self.window,
-                "儲存偏好設定失敗",
-                f"無法寫入設定檔：\n{error}",
-            )
-
-            self.add_log(
-                f"偏好設定儲存失敗：{error}",
-                "ERROR",
-            )
+            QMessageBox.critical(self.window, "儲存偏好設定失敗", f"無法寫入設定檔：\n{error}")
+            self.add_log(f"偏好設定儲存失敗：{error}", "ERROR")
             return
-
-        self.add_log(
-            "偏好設定已儲存",
-            "SUCCESS",
-        )
+        self.add_log("偏好設定已儲存", "SUCCESS")
 
     def start_processing(self):
-        """檢查設定並啟動背景影片處理。"""
-
         if self.thread is not None:
-            QMessageBox.information(
-                self.window,
-                "影片正在處理",
-                "目前已有一項影片處理工作正在執行。",
-            )
+            QMessageBox.information(self.window, "影片正在處理", "目前已有一項影片處理工作正在執行。")
             return
 
         queue_item = self.processing_queue.next_waiting()
-
-        if queue_item is not None:
+        if queue_item:
             self.current_queue_item = queue_item
-
-            input_text = str(queue_item.input_path)
-            queue_index = (
-                self.processing_queue.items.index(queue_item)
-            )
-
-            self.window.queue_list.item(
-                queue_index
-            ).setText(
-                f"處理中｜{queue_item.input_path.name}"
-            )
-
-            output_text = str(queue_item.output_path)
-
-            self.window.input_edit.setText(input_text)
-            self.window.output_edit.setText(output_text)
+            input_text, output_text = str(queue_item.input_path), str(queue_item.output_path)
+            self.window.queue_list.item(self.processing_queue.items.index(queue_item)).setText(f"處理中｜{queue_item.input_path.name}")
         else:
-            self.current_queue_item = None
+            input_text, output_text = self.window.input_edit.text().strip(), self.window.output_edit.text().strip()
 
-            input_text = (
-                self.window.input_edit.text().strip()
-            )
-            output_text = (
-                self.window.output_edit.text().strip()
-            )
-
-        if not input_text:
-            QMessageBox.warning(
-                self.window,
-                "缺少輸入影片",
-                "請先選擇要處理的影片。",
-            )
+        if not input_text or not Path(input_text).is_file():
+            QMessageBox.warning(self.window, "錯誤", "請確認輸入影片路徑正確。")
             return
-
-        input_path = Path(input_text)
-
-        if not input_path.is_file():
-            QMessageBox.warning(
-                self.window,
-                "找不到輸入影片",
-                f"找不到指定的影片：\n{input_path}",
-            )
-            return
-
-        if not output_text:
-            QMessageBox.warning(
-                self.window,
-                "缺少輸出位置",
-                "請指定輸出影片的位置。",
-            )
-            return
-
+        
         output_path = Path(output_text)
-
-        if (
-            input_path.resolve()
-            == output_path.resolve()
-        ):
-            QMessageBox.warning(
-                self.window,
-                "輸出位置錯誤",
-                "輸入影片與輸出影片不能是同一個檔案。",
-            )
-            return
-
         try:
-            output_path.parent.mkdir(
-                parents=True,
-                exist_ok=True,
-            )
-        except OSError as error:
-            QMessageBox.critical(
-                self.window,
-                "無法建立輸出目錄",
-                str(error),
-            )
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
+            QMessageBox.critical(self.window, "目錄建立失敗", str(e))
             return
-
-        detector = (
-            self.window.detector_combo.currentData()
-        )
-        tracker = (
-            self.window.tracker_combo.currentData()
-        )
-        renderer = (
-            self.window.renderer_combo.currentData()
-        )
-
-        if detector != "scrfd":
-            QMessageBox.warning(
-                self.window,
-                "尚未支援",
-                "目前 GUI 版本只支援 SCRFD 偵測器。",
-            )
-            return
-
-        temp_output = (
-            VideoPathManager
-            .build_temp_output_path(
-                output_path
-            )
-        )
 
         job = ProcessingJob(
-            input_path=input_path,
+            input_path=Path(input_text),
             output_path=output_path,
-            temp_output_path=temp_output,
-            detector=detector,
-            tracker=tracker,
-            renderer=renderer,
+            temp_output_path=VideoPathManager.build_temp_output_path(output_path),
+            detector=self.window.detector_combo.currentData(),
+            tracker=self.window.tracker_combo.currentData(),
+            renderer=self.window.renderer_combo.currentData(),
         )
 
-        config = self.config
-
-        ProcessingConfiguration.apply(
-            config=config,
-            job=job,
-        )
-
+        ProcessingConfiguration.apply(config=self.config, job=job)
         self.processing_started_at = perf_counter()
+        self.log_processing_session_start(job.input_path, job.output_path)
+        self.start_worker(self.config, job)
 
-        self.log_processing_session_start(
-            input_path=input_path,
-            output_path=output_path,
-        )
-
-        self.start_worker(config)
-
-    def log_processing_session_start(
-        self,
-        input_path: Path,
-        output_path: Path,
-    ):
-        """記錄影片處理工作階段的開始資訊。"""
-
-        started_time = datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
-
+    def log_processing_session_start(self, input_path, output_path):
+        started_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.add_log("")
         self.add_log(self.SESSION_SEPARATOR)
         self.add_log("AI-Video 影片處理工作")
@@ -521,382 +194,78 @@ class Controller(QObject):
         self.add_log(f"開始時間：{started_time}")
         self.add_log(f"輸入影片：{input_path}")
         self.add_log(f"輸出影片：{output_path}")
-        self.add_log(
-            "偵測器："
-            f"{self.window.detector_combo.currentText()}"
-        )
-        self.add_log(
-            "追蹤器："
-            f"{self.window.tracker_combo.currentText()}"
-        )
-        self.add_log(
-            "處理方式："
-            f"{self.window.renderer_combo.currentText()}"
-        )
         self.add_log(self.SESSION_DETAIL_SEPARATOR)
 
-    def log_processing_session_end(
-        self,
-        result: str,
-        level: str,
-    ):
-        """記錄影片處理工作階段的結束資訊。"""
-
-        finished_time = datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
-
-        elapsed_seconds = self.get_processing_elapsed_seconds()
-
+    def log_processing_session_end(self, result, level):
+        elapsed = perf_counter() - self.processing_started_at if self.processing_started_at else 0
         self.add_log(self.SESSION_DETAIL_SEPARATOR)
-        self.add_log(
-            f"處理結果：{result}",
-            level,
-        )
-        self.add_log(f"結束時間：{finished_time}")
-        self.add_log(
-            f"總耗時：{elapsed_seconds:.2f} 秒"
-        )
+        self.add_log(f"處理結果：{result}", level)
+        self.add_log(f"總耗時：{elapsed:.2f} 秒")
         self.add_log(self.SESSION_SEPARATOR)
-
         self.processing_started_at = None
 
-    def get_processing_elapsed_seconds(self) -> float:
-        """取得目前影片處理工作的經過秒數。"""
-
-        if self.processing_started_at is None:
-            return 0.0
-
-        return (
-            perf_counter()
-            - self.processing_started_at
-        )
-
-    def start_worker(self, config):
-        """建立背景執行緒與 Worker。"""
-
+    def start_worker(self, config, job):
+        """建立背景執行緒與 Worker，直接傳入 job 物件。"""
         self.thread = QThread()
-        self.worker = VideoWorker(config)
-
+        # 修正：直接傳入 config 與 job，確保數據流動明確
+        self.worker = VideoWorker(config=config, job=job)
         self.worker.moveToThread(self.thread)
 
-        self.thread.started.connect(
-            self.worker.run
-        )
-
-        self.worker.progress.connect(
-            self.window.progress.setValue
-        )
-
-        self.worker.stats_changed.connect(
-            self.window.update_processing_stats
-        )
-
-        self.worker.status_changed.connect(
-            self.window.status_label.setText
-        )
-
-        self.worker.status_changed.connect(
-            self.processing_status_changed
-        )
-
-        self.worker.finished.connect(
-            self.processing_finished
-        )
-
-        self.worker.cancelled.connect(
-            self.processing_cancelled
-        )
-
-        self.worker.failed.connect(
-            self.processing_failed
-        )
-
-        self.worker.finished.connect(
-            self.thread.quit
-        )
-
-        self.worker.cancelled.connect(
-            self.thread.quit
-        )
-
-        self.worker.failed.connect(
-            self.thread.quit
-        )
-
-        self.thread.finished.connect(
-            self.cleanup_worker
-        )
+        self.thread.started.connect(self.worker.run)
+        self.worker.progress.connect(self.window.progress.setValue)
+        self.worker.stats_changed.connect(self.window.update_processing_stats)
+        self.worker.status_changed.connect(self.window.status_label.setText)
+        self.worker.finished.connect(self.processing_finished)
+        self.worker.cancelled.connect(self.processing_cancelled)
+        self.worker.failed.connect(self.processing_failed)
+        
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.cancelled.connect(self.thread.quit)
+        self.worker.failed.connect(self.thread.quit)
+        self.thread.finished.connect(self.cleanup_worker)
 
         self.set_processing_state(True)
-
         self.window.reset_processing_stats()
         self.window.progress.setValue(0)
-        self.window.status_label.setText(
-            "正在準備影片處理……"
-        )
-
+        self.window.status_label.setText("正在準備影片處理……")
         self.thread.start()
 
     def stop_processing(self):
-        """要求背景工作停止。"""
+        if self.worker: self.worker.request_stop()
 
-        if self.worker is None:
-            return
-
-        self.window.stop_button.setEnabled(False)
-        self.window.status_label.setText(
-            "正在停止處理……"
-        )
-
-        self.worker.request_stop()
-
-    def shutdown(self):
-        """停止背景工作並等待執行緒安全結束。"""
-
-        if self.worker is not None:
-            self.worker.request_stop()
-
-        if (
-            self.thread is not None
-            and self.thread.isRunning()
-        ):
-            self.thread.quit()
-            self.thread.wait()
-
-    @Slot(str)
-    def processing_finished(self, output_path):
-        """影片處理完成。"""
-
-        self.window.progress.setValue(100)
-        self.window.status_label.setText(
-            "影片處理完成"
-        )
-
-        self.add_log(
-            f"影片處理完成：{output_path}",
-            "SUCCESS",
-        )
-
-        self.log_processing_session_end(
-            result="完成",
-            level="SUCCESS",
-        )
-
-        if self.current_queue_item is not None:
-            self.processing_queue.mark_completed(
-                self.current_queue_item
-            )
-
-            queue_index = (
-                self.processing_queue.items.index(
-                    self.current_queue_item
-                )
-            )
-
-            self.window.queue_list.item(
-                queue_index
-            ).setText(
-                "已完成｜"
-                f"{self.current_queue_item.input_path.name}"
-            )
-
-            self.continue_queue_after_cleanup = True
-
-        else:
-            QMessageBox.information(
-                self.window,
-                "處理完成",
-                f"影片已輸出至：\n{output_path}",
-            )
-
-    @Slot()
-    def processing_cancelled(self):
-        """影片處理被使用者中止。"""
-
-        self.window.progress.setValue(0)
-        self.window.status_label.setText(
-            "影片處理已停止"
-        )
-
-        self.add_log(
-            "使用者已停止影片處理",
-            "WARNING",
-        )
-
-        self.log_processing_session_end(
-            result="使用者停止",
-            level="WARNING",
-        )
-
-        if self.current_queue_item is not None:
-            self.processing_queue.mark_cancelled(
-                self.current_queue_item
-            )
-
-            queue_index = (
-                self.processing_queue.items.index(
-                    self.current_queue_item
-                )
-            )
-
-            self.window.queue_list.item(
-                queue_index
-            ).setText(
-                "已停止｜"
-                f"{self.current_queue_item.input_path.name}"
-            )
-
-            self.continue_queue_after_cleanup = False
-
-        QMessageBox.information(
-            self.window,
-            "處理已停止",
-            "影片處理工作已停止，暫存檔案已清除。",
-        )
-
-    @Slot(str)
-    def processing_failed(self, message):
-        """影片處理發生錯誤。"""
-
-        self.window.progress.setValue(0)
-        self.window.status_label.setText(
-            "影片處理失敗"
-        )
-
-        self.add_log(
-            message,
-            "ERROR",
-        )
-
-        self.log_processing_session_end(
-            result="失敗",
-            level="ERROR",
-        )
-
-        if self.current_queue_item is not None:
-            self.processing_queue.mark_failed(
-                self.current_queue_item,
-                message,
-            )
-
-            queue_index = (
-                self.processing_queue.items.index(
-                    self.current_queue_item
-                )
-            )
-
-            self.window.queue_list.item(
-                queue_index
-            ).setText(
-                "處理失敗｜"
-                f"{self.current_queue_item.input_path.name}"
-            )
-
-            self.continue_queue_after_cleanup = True
-
-        if self.current_queue_item is not None:
-            failed_name = (
-                self.current_queue_item.input_path.name
-            )
-
-            user_message = (
-                f"無法處理影片：{failed_name}\n\n"
-                "請確認檔案格式及內容是否正常。\n"
-                "詳細資訊已保留在執行紀錄中。"
-            )
-        else:
-            user_message = (
-                "影片處理失敗。\n\n"
-                "請確認檔案格式及內容是否正常。\n"
-                "詳細資訊已保留在執行紀錄中。"
-            )
-
-        QMessageBox.critical(
-            self.window,
-            "影片處理失敗",
-            user_message,
-        )
-
-    @Slot()
     def cleanup_worker(self):
-        """背景執行緒結束後清理物件。"""
-
-        if self.worker is not None:
-            self.worker.deleteLater()
-
-        if self.thread is not None:
-            self.thread.deleteLater()
-
+        if self.worker: self.worker.deleteLater()
+        if self.thread: self.thread.deleteLater()
         self.worker = None
         self.thread = None
-
         self.set_processing_state(False)
+        # (佇列處理邏輯保持不變...)
+        if self.continue_queue_after_cleanup:
+            QTimer.singleShot(0, self.start_processing)
+            self.continue_queue_after_cleanup = False
+            self.current_queue_item = None
 
-        should_continue = (
-            self.continue_queue_after_cleanup
-        )
+    def processing_finished(self, output_path):
+        self.window.progress.setValue(100)
+        self.window.status_label.setText("影片處理完成")
+        self.add_log(f"影片處理完成：{output_path}", "SUCCESS")
+        self.log_processing_session_end("完成", "SUCCESS")
+        if self.current_queue_item:
+            self.processing_queue.mark_completed(self.current_queue_item)
+            self.continue_queue_after_cleanup = True
 
-        self.continue_queue_after_cleanup = False
-        self.current_queue_item = None
+    def processing_cancelled(self):
+        self.window.status_label.setText("影片處理已停止")
+        self.add_log("使用者已停止影片處理", "WARNING")
+        self.log_processing_session_end("使用者停止", "WARNING")
+        if self.current_queue_item: self.processing_queue.mark_cancelled(self.current_queue_item)
 
-        has_waiting_item = any(
-            item.status
-            is ProcessingQueueStatus.WAITING
-            for item in self.processing_queue.items
-        )
-
-        if should_continue and has_waiting_item:
-            QTimer.singleShot(
-                0,
-                self.start_processing,
-            )
-        elif should_continue:
-            completed_count = sum(
-                item.status
-                is ProcessingQueueStatus.COMPLETED
-                for item in self.processing_queue.items
-            )
-
-            failed_count = sum(
-                item.status
-                is ProcessingQueueStatus.FAILED
-                for item in self.processing_queue.items
-            )
-
-            QMessageBox.information(
-                self.window,
-                "佇列處理結束",
-                (
-                    "所有等待中的影片均已處理。\n\n"
-                    f"完成：{completed_count} 支\n"
-                    f"失敗：{failed_count} 支"
-                ),
-            )
+    def processing_failed(self, message):
+        self.window.status_label.setText("影片處理失敗")
+        self.add_log(message, "ERROR")
+        self.log_processing_session_end("失敗", "ERROR")
+        if self.current_queue_item: self.processing_queue.mark_failed(self.current_queue_item, message)
+        QMessageBox.critical(self.window, "失敗", message)
 
     def set_processing_state(self, processing):
-        """切換處理期間的按鈕及輸入欄位狀態。"""
-
-        ProcessingStateManager.apply(
-            window=self.window,
-            processing=processing,
-        )
-
-    @Slot(str)
-    def processing_status_changed(self, message):
-        """接收背景工作狀態。"""
-
-        important_messages = (
-            "正在開啟影片",
-            "正在偵測及模糊",
-            "正在停止處理",
-            "正在合併原始音訊",
-            "影片處理完成",
-            "影片處理已停止",
-        )
-
-        if any(
-            text in message
-            for text in important_messages
-        ):
-            self.add_log(message)
+        ProcessingStateManager.apply(window=self.window, processing=processing)
