@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class VideoWorker(QObject):
-    """背景影片處理工作物件 (修復 VideoReader 屬性呼叫)。"""
+    """背景影片處理工作物件。"""
 
     progress = Signal(int)
     stats_changed = Signal(dict)
@@ -46,7 +46,7 @@ class VideoWorker(QObject):
             self.status_changed.emit("正在開啟影片......")
             self.progress.emit(0)
 
-            # 1. 初始化讀取與寫入器（修正為正確的屬性對應）
+            # 1. 初始化讀取與寫入器
             reader = VideoReader(str(input_path))
             total_frames = getattr(reader, "frame_count", 0)
             fps = getattr(reader, "fps", 30)
@@ -63,7 +63,18 @@ class VideoWorker(QObject):
             self.status_changed.emit("正在偵測及模糊影片中的人臉......")
             
             current_frame = 0
-            for frame in reader.read_frames():
+            
+            # 安全取得畫面迴圈（相容各種實作方式）
+            frames_iterator = None
+            if hasattr(reader, "read_frames"):
+                frames_iterator = reader.read_frames()
+            elif hasattr(reader, "__iter__"):
+                frames_iterator = iter(reader)
+            else:
+                # 如果 reader 本身可疊代
+                frames_iterator = reader
+
+            for frame in frames_iterator:
                 if self._stop_requested:
                     raise InterruptedError("使用者要求中止處理")
 
