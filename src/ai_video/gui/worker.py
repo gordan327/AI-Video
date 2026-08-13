@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class VideoWorker(QObject):
-    """背景影片處理工作物件。"""
+    """背景影片處理工作物件 (對齊 VideoReader 的標準 open/read/close 介面)。"""
 
     progress = Signal(int)
     stats_changed = Signal(dict)
@@ -34,6 +34,8 @@ class VideoWorker(QObject):
 
     def run(self):
         """執行影片處理流程。"""
+        reader = None
+        writer = None
         temp_output_path = None
         try:
             if not self.input_path_str or not self.output_path_str:
@@ -46,37 +48,35 @@ class VideoWorker(QObject):
             self.status_changed.emit("正在開啟影片......")
             self.progress.emit(0)
 
-            # 1. 初始化讀取與寫入器
+            # 1. 初始化並開啟 VideoReader
             reader = VideoReader(str(input_path))
-            total_frames = getattr(reader, "frame_count", 0)
-            fps = getattr(reader, "fps", 30)
-            width = getattr(reader, "width", 1920)
-            height = getattr(reader, "height", 1080)
-            
+            reader.open()
+
+            total_frames = reader.frame_count
+            fps = reader.fps
+            width = reader.width
+            height = reader.height
+
+            # 2. 初始化 VideoWriter
             writer = VideoWriter(
                 str(temp_output_path),
-                fps=fps,
-                width=width,
-                height=height
+                fps=fps if fps > 0 else 30.0,
+                width=width if width > 0 else 1920,
+                height=height if height > 0 else 1080
             )
 
             self.status_changed.emit("正在偵測及模糊影片中的人臉......")
             
             current_frame = 0
             
-            # 安全取得畫面迴圈（相容各種實作方式）
-            frames_iterator = None
-            if hasattr(reader, "read_frames"):
-                frames_iterator = reader.read_frames()
-            elif hasattr(reader, "__iter__"):
-                frames_iterator = iter(reader)
-            else:
-                # 如果 reader 本身可疊代
-                frames_iterator = reader
-
-            for frame in frames_iterator:
+            # 3. 使用標準的 reader.read() 迴圈逐格讀取
+            while True:
                 if self._stop_requested:
                     raise InterruptedError("使用者要求中止處理")
+
+                success, frame = reader.read()
+                if not success or frame is None:
+                    break
 
                 writer.write_frame(frame)
                 current_frame += 1
@@ -86,8 +86,8 @@ class VideoWorker(QObject):
                     self.progress.emit(percent)
                     self.stats_changed.emit({"frame": current_frame, "total": total_frames})
 
-            if hasattr(reader, "release"):
-                reader.release()
+            # 關閉讀取與寫入器
+            reader.close()
             if hasattr(writer, "release"):
                 writer.release()
 
@@ -95,7 +95,7 @@ class VideoWorker(QObject):
                 self.cancelled.emit()
                 return
 
-            # 2. 合併原始音訊
+            # 4. 合併原始音訊
             self.status_changed.emit("正在合併原始音訊......")
             self.ffmpeg_processor.merge_audio(
                 original_video=str(input_path),
@@ -103,7 +103,7 @@ class VideoWorker(QObject):
                 output_video=str(output_path),
             )
 
-            # 3. 清理暫存檔
+            # 5. 清理暫存檔
             if temp_output_path and temp_output_path.is_file():
                 try:
                     temp_output_path.unlink()
@@ -116,6 +116,11 @@ class VideoWorker(QObject):
 
         except InterruptedError:
             logger.warning("影片處理工作已被使用者停止")
+            if reader:
+                try:
+                    reader.close()
+                except Exception:
+                    pass
             if temp_output_path and isinstance(temp_output_path, Path) and temp_output_path.is_file():
                 try:
                     temp_output_path.unlink()
@@ -127,6 +132,12 @@ class VideoWorker(QObject):
             error_trace = traceback.format_exc()
             logger.error(f"Worker 處理失敗:\n{error_trace}")
             
+            if reader:
+                try:
+                    reader.close()
+                except Exception:
+                    pass
+
             if temp_output_path and isinstance(temp_output_path, Path) and temp_output_path.is_file():
                 try:
                     temp_output_path.unlink()
