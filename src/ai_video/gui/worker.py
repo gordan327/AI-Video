@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class VideoWorker(QObject):
-    """背景影片處理工作物件 (對齊 VideoReader 的標準 open/read/close 介面)。"""
+    """背景影片處理工作物件 (完美對齊 VideoReader 與 VideoWriter 的真實介面)。"""
 
     progress = Signal(int)
     stats_changed = Signal(dict)
@@ -57,19 +57,20 @@ class VideoWorker(QObject):
             width = reader.width
             height = reader.height
 
-            # 2. 初始化 VideoWriter
+            # 2. 初始化並開啟 VideoWriter (使用正確的 open() 與 write())
             writer = VideoWriter(
-                str(temp_output_path),
+                output_path=str(temp_output_path),
                 fps=fps if fps > 0 else 30.0,
                 width=width if width > 0 else 1920,
                 height=height if height > 0 else 1080
             )
+            writer.open()
 
             self.status_changed.emit("正在偵測及模糊影片中的人臉......")
             
             current_frame = 0
             
-            # 3. 使用標準的 reader.read() 迴圈逐格讀取
+            # 3. 逐格讀取與寫入
             while True:
                 if self._stop_requested:
                     raise InterruptedError("使用者要求中止處理")
@@ -78,7 +79,7 @@ class VideoWorker(QObject):
                 if not success or frame is None:
                     break
 
-                writer.write_frame(frame)
+                writer.write(frame)
                 current_frame += 1
 
                 if total_frames > 0:
@@ -86,16 +87,15 @@ class VideoWorker(QObject):
                     self.progress.emit(percent)
                     self.stats_changed.emit({"frame": current_frame, "total": total_frames})
 
-            # 關閉讀取與寫入器
+            # 4. 關閉讀取與寫入器 (使用正確的 close())
             reader.close()
-            if hasattr(writer, "release"):
-                writer.release()
+            writer.close()
 
             if self._stop_requested:
                 self.cancelled.emit()
                 return
 
-            # 4. 合併原始音訊
+            # 5. 合併原始音訊
             self.status_changed.emit("正在合併原始音訊......")
             self.ffmpeg_processor.merge_audio(
                 original_video=str(input_path),
@@ -103,7 +103,7 @@ class VideoWorker(QObject):
                 output_video=str(output_path),
             )
 
-            # 5. 清理暫存檔
+            # 6. 清理暫存檔
             if temp_output_path and temp_output_path.is_file():
                 try:
                     temp_output_path.unlink()
@@ -117,15 +117,14 @@ class VideoWorker(QObject):
         except InterruptedError:
             logger.warning("影片處理工作已被使用者停止")
             if reader:
-                try:
-                    reader.close()
-                except Exception:
-                    pass
+                try: reader.close()
+                except Exception: pass
+            if writer:
+                try: writer.close()
+                except Exception: pass
             if temp_output_path and isinstance(temp_output_path, Path) and temp_output_path.is_file():
-                try:
-                    temp_output_path.unlink()
-                except OSError:
-                    pass
+                try: temp_output_path.unlink()
+                except OSError: pass
             self.cancelled.emit()
 
         except Exception as error:
@@ -133,16 +132,15 @@ class VideoWorker(QObject):
             logger.error(f"Worker 處理失敗:\n{error_trace}")
             
             if reader:
-                try:
-                    reader.close()
-                except Exception:
-                    pass
+                try: reader.close()
+                except Exception: pass
+            if writer:
+                try: writer.close()
+                except Exception: pass
 
             if temp_output_path and isinstance(temp_output_path, Path) and temp_output_path.is_file():
-                try:
-                    temp_output_path.unlink()
-                except OSError:
-                    pass
+                try: temp_output_path.unlink()
+                except OSError: pass
 
             self.failed.emit(f"處理失敗: {str(error)}")
 
