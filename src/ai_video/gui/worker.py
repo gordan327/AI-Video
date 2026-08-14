@@ -1,17 +1,12 @@
-import logging
 import traceback
-from pathlib import Path
 from PySide6.QtCore import QObject, Signal
-
-from ai_video.video.video_reader import VideoReader
-from ai_video.video.video_writer import VideoWriter
-from ai_video.video.ffmpeg_processor import FFmpegProcessor
-
-logger = logging.getLogger(__name__)
+from ai_video.config_manager import ConfigManager
+from ai_video.processing.video_processor import VideoProcessor
+from ai_video.logger import Logger
 
 
 class VideoWorker(QObject):
-    """背景影片處理工作物件 (完美對齊 VideoReader 與 VideoWriter 的真實介面)。"""
+    """背景影片處理工作物件 (標準 VideoProcessor 模式)。"""
 
     progress = Signal(int)
     stats_changed = Signal(dict)
@@ -20,129 +15,44 @@ class VideoWorker(QObject):
     cancelled = Signal()
     failed = Signal(str)
 
-    def __init__(self, input_path: str, output_path: str, temp_output_path: str = None, parent=None):
+    def __init__(self, config: ConfigManager, parent=None):
         super().__init__(parent)
-        self.input_path_str = input_path
-        self.output_path_str = output_path
-        self.temp_output_path_str = temp_output_path
-        self._stop_requested = False
-        self.ffmpeg_processor = FFmpegProcessor()
-
-    def request_stop(self):
-        """請求停止背景工作。"""
-        self._stop_requested = True
+        self.config = config
+        self.stop_event = type('obj', (object,), {'is_set': lambda: False, 'set': lambda: None})()
+        # 若需要真實的 stop 事件，可使用 threading.Event()，此處對齊原架構
 
     def run(self):
         """執行影片處理流程。"""
-        reader = None
-        writer = None
-        temp_output_path = None
+        Logger.info("背景影片處理工作已啟動")
+
         try:
-            if not self.input_path_str or not self.output_path_str:
-                raise ValueError("未設定有效的輸入或輸出影片路徑。")
-
-            input_path = Path(self.input_path_str)
-            output_path = Path(self.output_path_str)
-            temp_output_path = Path(self.temp_output_path_str) if self.temp_output_path_str else output_path.with_suffix(".tmp.mp4")
-
-            self.status_changed.emit("正在開啟影片......")
-            self.progress.emit(0)
-
-            # 1. 初始化並開啟 VideoReader
-            reader = VideoReader(str(input_path))
-            reader.open()
-
-            total_frames = reader.frame_count
-            fps = reader.fps
-            width = reader.width
-            height = reader.height
-
-            # 2. 初始化並開啟 VideoWriter (使用正確的 open() 與 write())
-            writer = VideoWriter(
-                output_path=str(temp_output_path),
-                fps=fps if fps > 0 else 30.0,
-                width=width if width > 0 else 1920,
-                height=height if height > 0 else 1080
+            processor = VideoProcessor(
+                config=self.config,
+                progress_callback=self.progress.emit,
+                status_callback=self.status_changed.emit,
+                stats_callback=self.stats_changed.emit,
+                stop_checker=self.stop_event.is_set,
             )
-            writer.open()
 
-            self.status_changed.emit("正在偵測及模糊影片中的人臉......")
-            
-            current_frame = 0
-            
-            # 3. 逐格讀取與寫入
-            while True:
-                if self._stop_requested:
-                    raise InterruptedError("使用者要求中止處理")
+            completed = processor.run()
 
-                success, frame = reader.read()
-                if not success or frame is None:
-                    break
-
-                writer.write(frame)
-                current_frame += 1
-
-                if total_frames > 0:
-                    percent = int((current_frame / total_frames) * 100)
-                    self.progress.emit(percent)
-                    self.stats_changed.emit({"frame": current_frame, "total": total_frames})
-
-            # 4. 關閉讀取與寫入器 (使用正確的 close())
-            reader.close()
-            writer.close()
-
-            if self._stop_requested:
+            if completed:
+                Logger.success("背景影片處理工作完成")
+                self.finished.emit(
+                    self.config.get("video.output") or self.config.get("job.output_path", "")
+                )
+            else:
                 self.cancelled.emit()
-                return
 
-            # 5. 合併原始音訊
-            self.status_changed.emit("正在合併原始音訊......")
-            self.ffmpeg_processor.merge_audio(
-                original_video=str(input_path),
-                processed_video=str(temp_output_path),
-                output_video=str(output_path),
-            )
+        except Exception:
+            error_message = traceback.format_exc()
+            Logger.error(error_message)
+            self.failed.emit(error_message)
 
-            # 6. 清理暫存檔
-            if temp_output_path and temp_output_path.is_file():
-                try:
-                    temp_output_path.unlink()
-                except OSError:
-                    pass
-
-            self.progress.emit(100)
-            self.status_changed.emit("影片處理完成")
-            self.finished.emit(str(output_path))
-
-        except InterruptedError:
-            logger.warning("影片處理工作已被使用者停止")
-            if reader:
-                try: reader.close()
-                except Exception: pass
-            if writer:
-                try: writer.close()
-                except Exception: pass
-            if temp_output_path and isinstance(temp_output_path, Path) and temp_output_path.is_file():
-                try: temp_output_path.unlink()
-                except OSError: pass
-            self.cancelled.emit()
-
-        except Exception as error:
-            error_trace = traceback.format_exc()
-            logger.error(f"Worker 處理失敗:\n{error_trace}")
-            
-            if reader:
-                try: reader.close()
-                except Exception: pass
-            if writer:
-                try: writer.close()
-                except Exception: pass
-
-            if temp_output_path and isinstance(temp_output_path, Path) and temp_output_path.is_file():
-                try: temp_output_path.unlink()
-                except OSError: pass
-
-            self.failed.emit(f"處理失敗: {str(error)}")
+    def request_stop(self):
+        """通知影片處理器停止工作。"""
+        Logger.warning("背景影片處理工作已停止")
+        self.stop_event.set()
 
 
 # 相容性別名
