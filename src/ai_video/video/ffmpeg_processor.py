@@ -13,51 +13,16 @@ class FFmpegProcessor:
 
     @staticmethod
     def _get_ffmpeg_command() -> str:
-        """取得 FFmpeg 執行檔位置。"""
-
+        """強制直接使用安裝目錄下的 ffmpeg.exe 或系統 PATH"""
         executable_name = "ffmpeg.exe" if os.name == "nt" else "ffmpeg"
-
-        # 1. Nuitka / PyInstaller 打包環境 (sys.executable 所在目錄及其子目錄)
+        
         if getattr(sys, "frozen", False) or "__compiled__" in globals():
             exe_dir = Path(sys.executable).resolve().parent
-            candidates = [
-                exe_dir / executable_name,
-                exe_dir / "bin" / executable_name,
-                exe_dir / "_internal" / executable_name,
-                exe_dir.parent / "lib" / "ffmpeg" / "tools" / "ffmpeg" / "bin" / executable_name,
-            ]
-            for cand in candidates:
-                if cand.is_file():
-                    logger.info(f"找到打包隨附之 FFmpeg: {cand}")
-                    return str(cand)
+            local_ffmpeg = exe_dir / executable_name
+            if local_ffmpeg.is_file():
+                return str(local_ffmpeg)
 
-        # 2. 檢查當前工作目錄 (CWD)
-        cwd_cand = Path.cwd() / executable_name
-        if cwd_cand.is_file():
-            logger.info(f"於工作目錄找到 FFmpeg: {cwd_cand}")
-            return str(cwd_cand)
-
-        # 3. 檢查系統環境變數 PATH
-        system_ffmpeg = shutil.which("ffmpeg")
-        if system_ffmpeg:
-            logger.info(f"於系統 PATH 找到 FFmpeg: {system_ffmpeg}")
-            return system_ffmpeg
-
-        # 4. 開發環境與安裝後常見相對路徑 fallback
-        base_dir = Path(__file__).resolve().parent.parent.parent.parent
-        dev_candidates = [
-            base_dir / "lib" / "ffmpeg" / "tools" / "ffmpeg" / "bin" / executable_name,
-            base_dir / executable_name,
-            Path("C:/Program Files (x86)/AI-Video/ffmpeg.exe"),
-            Path("C:/Program Files/AI-Video/ffmpeg.exe"),
-        ]
-        
-        for dev_cand in dev_candidates:
-            if dev_cand.is_file():
-                logger.info(f"於指定路徑找到 FFmpeg: {dev_cand}")
-                return str(dev_cand)
-
-        logger.warning("未找到任何實體 FFmpeg 檔案，將嘗試直接呼叫 'ffmpeg'")
+        # 若本地找不到，直接回傳 "ffmpeg" 讓系統環境去抓
         return "ffmpeg"
 
     def merge_audio(
