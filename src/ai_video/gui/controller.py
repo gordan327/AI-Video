@@ -209,13 +209,10 @@ class Controller(QObject):
         self.processing_started_at = None
 
     def start_worker(self, job):
-        """建立背景執行緒與 Worker，直接傳入明確的 job 路徑參數。"""
+        """建立背景執行緒與 Worker (正確傳入 config)。"""
         self.thread = QThread()
-        self.worker = VideoWorker(
-            input_path=str(job.input_path),
-            output_path=str(job.output_path),
-            temp_output_path=str(job.temp_output_path)
-        )
+        # 修正：VideoWorker 標準只接收 config，路徑已經透過 ProcessingConfiguration 寫入 config
+        self.worker = VideoWorker(self.config)
         self.worker.moveToThread(self.thread)
 
         self.thread.started.connect(self.worker.run)
