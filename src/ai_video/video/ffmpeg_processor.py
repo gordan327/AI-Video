@@ -18,12 +18,29 @@ class FFmpegProcessor:
         
         if getattr(sys, "frozen", False) or "__compiled__" in globals():
             exe_dir = Path(sys.executable).resolve().parent
+            
+            # 1. 檢查同層目錄
             local_ffmpeg = exe_dir / executable_name
             if local_ffmpeg.is_file():
                 return str(local_ffmpeg)
+                
+            # 2. 檢查常見的子目錄或上一層結構（例如打包在根目錄或 lib 資料夾旁）
+            alternative_paths = [
+                exe_dir / "lib" / "ffmpeg" / executable_name,
+                exe_dir.parent / executable_name,
+                exe_dir.parent / "lib" / "ffmpeg" / executable_name,
+            ]
+            for path in alternative_paths:
+                if path.is_file():
+                    return str(path)
 
-        # 若本地找不到，直接回傳 "ffmpeg" 讓系統環境去抓
-        return "ffmpeg"
+        # 3. 嘗試從系統環境變數中尋找
+        system_ffmpeg = shutil.which("ffmpeg")
+        if system_ffmpeg:
+            return system_ffmpeg
+
+        # 4. 若皆找不到，回傳預設字串讓系統嘗試呼叫
+        return executable_name
 
     def merge_audio(
         self,
