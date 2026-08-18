@@ -1,0 +1,104 @@
+name: Windows Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'develop/*'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Upgrade pip & install Nuitka
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install nuitka zstandard
+
+      - name: Install FFmpeg & Inno Setup via Chocolatey
+        run: |
+          choco install ffmpeg -y
+          choco install innosetup -y
+
+      - name: Install Lightweight Dependencies & Local Project
+        run: |
+          python -m pip install onnxruntime opencv-python PySide6 scipy pyyaml ultralytics
+          python -m pip install -e .
+
+      - name: Build Windows Executable with Nuitka
+        shell: powershell
+        run: |
+          $env:PYTHONUTF8 = "1"
+          $env:PYTHONPATH = "src"
+          $FFMPEG_PATH = (Get-Command ffmpeg.exe).Source
+          Write-Host "FFmpeg Location: $FFMPEG_PATH"
+
+          $ICON_ARG = ""
+          if (Test-Path "assets/icon.ico") {
+              $ICON_ARG = "--windows-icon-from-ico=assets/icon.ico"
+          }
+
+          python -m nuitka `
+            --standalone `
+            --assume-yes-for-downloads `
+            --jobs=1 `
+            --windows-console-mode=disable `
+            --enable-plugin=pyside6 `
+            --include-package=ai_video `
+            --include-package=ultralytics `
+            --include-package=cv2 `
+            --include-package=onnxruntime `
+            --include-data-dir=src/ai_video/config=ai_video/config `
+            --include-data-files="$FFMPEG_PATH=bin/ffmpeg.exe" `
+            --nofollow-import-to=sympy `
+            --nofollow-import-to=numpy `
+            $ICON_ARG `
+            --output-dir=dist `
+            src/ai_video/gui/app.py
+
+      - name: Create Inno Setup Script & Build Windows Installer (.exe)
+        shell: powershell
+        run: |
+          $issContent = @"
+          [Setup]
+          AppName=AI-Video
+          AppVersion=1.1.0
+          DefaultDirName={autopf}\AI-Video
+          DefaultGroupName=AI-Video
+          UninstallDisplayIcon={app}\app.exe
+          Compression=lzma2/ultra64
+          SolidCompression=yes
+          OutputDir=dist_installer
+          OutputBaseFilename=AI-Video-Windows-Installer
+
+          [Tasks]
+          Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
+
+          [Files]
+          Source: "dist\app.dist\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+          [Icons]
+          Name: "{group}\AI-Video"; Filename: "{app}\app.exe"
+          Name: "{autodesktop}\AI-Video"; Filename: "{app}\app.exe"; Tasks: desktopicon
+
+          [Run]
+          Filename: "{app}\app.exe"; Description: "{cm:LaunchProgram,AI-Video}"; Flags: nowait postinstall skipifsilent
+          "@
+          Set-Content -Path "installer.iss" -Value $issContent
+          ISCC.exe installer.iss
+
+      - name: Upload Windows Installer (.exe)
+        uses: actions/upload-artifact@v4
+        with:
+          name: AI-Video-Windows-Installer
+          path: dist_installer/AI-Video-Windows-Installer.exe
