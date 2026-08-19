@@ -48,23 +48,26 @@ jobs:
               $ICON_ARG = "--windows-icon-from-ico=assets/icon.ico"
           }
 
-          python -m nuitka `
-            --standalone `
-            --assume-yes-for-downloads `
-            --jobs=1 `
-            --windows-console-mode=disable `
-            --enable-plugin=pyside6 `
-            --include-package=ai_video `
-            --include-package=ultralytics `
-            --include-package=cv2 `
-            --include-package=onnxruntime `
-            --include-data-dir=src/ai_video/config=ai_video/config `
-            --include-data-files="$FFMPEG_PATH=bin/ffmpeg.exe" `
-            --nofollow-import-to=sympy `
-            --nofollow-import-to=numpy `
-            $ICON_ARG `
-            --output-dir=dist `
-            src/ai_video/gui/app.py
+            python -m nuitka `
+                --standalone `
+                --assume-yes-for-downloads `
+                --jobs=1 `
+                --windows-console-mode=disable `
+                --enable-plugin=pyside6 `
+                --include-package=ai_video `
+                --include-package=ultralytics `
+                --include-package=cv2 `
+                --include-package=onnxruntime `
+                --include-data-dir=src/ai_video/config=ai_video/config `
+                --include-data-files="$FFMPEG_PATH=bin/ffmpeg.exe" `
+                --nofollow-import-to=sympy `
+                --nofollow-import-to=numpy `
+                --nofollow-import-to=torch `
+                --nofollow-import-to=transformers `
+                --nofollow-import-to=whisper `
+                $ICON_ARG `
+                --output-dir=dist `
+                src/ai_video/gui/app.py
 
       - name: Create Inno Setup Script & Build Windows Installer (.exe)
         shell: powershell
