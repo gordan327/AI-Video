@@ -32,7 +32,9 @@ jobs:
 
       - name: Install Lightweight Dependencies & Local Project
         run: |
+          # 安裝依賴後強制移除會導致編譯卡死的 sympy
           python -m pip install onnxruntime opencv-python PySide6 scipy pyyaml ultralytics
+          python -m pip uninstall -y sympy
           python -m pip install -e .
 
       - name: Build Windows Executable with Nuitka
@@ -48,34 +50,37 @@ jobs:
               $ICON_ARG = "--windows-icon-from-ico=assets/icon.ico"
           }
 
-            python -m nuitka `
-                --standalone `
-                --assume-yes-for-downloads `
-                --jobs=1 `
-                --windows-console-mode=force `
-                --enable-plugin=pyside6 `
-                --include-package=ai_video `
-                --include-package=ultralytics `
-                --include-package=cv2 `
-                --include-package=onnxruntime `
-                --include-data-dir=src/ai_video/config=ai_video/config `
-                --include-data-files="$FFMPEG_PATH=bin/ffmpeg.exe" `
-                $ICON_ARG `
-                --output-dir=dist `
-                src/ai_video/gui/app.py
+          # 使用 --windows-console-mode=force 方便除錯
+          # 加入 --nofollow-import-to 強制排除數學運算庫
+          python -m nuitka `
+            --standalone `
+            --assume-yes-for-downloads `
+            --jobs=1 `
+            --windows-console-mode=force `
+            --enable-plugin=pyside6 `
+            --include-package=ai_video `
+            --include-package=ultralytics `
+            --include-package=cv2 `
+            --include-package=onnxruntime `
+            --include-data-dir=src/ai_video/config=ai_video/config `
+            --include-data-files="$FFMPEG_PATH=bin/ffmpeg.exe" `
+            --nofollow-import-to=sympy `
+            --nofollow-import-to=numpy `
+            $ICON_ARG `
+            --output-dir=dist `
+            src/ai_video/gui/app.py
 
       - name: Create Inno Setup Script & Build Windows Installer (.exe)
         shell: powershell
         run: |
           $issContent = @"
-          
           [Setup]
           AppName=AI-Video
           AppVersion=1.1.0
           DefaultDirName={autopf}\AI-Video
           DefaultGroupName=AI-Video
           UninstallDisplayIcon={app}\app.exe
-          SetupIconFile=assets\icon.ico   <-- 補上這行，指定安裝程式的 Icon
+          SetupIconFile=assets\icon.ico
           Compression=lzma2/ultra64
           SolidCompression=yes
           OutputDir=dist_installer
