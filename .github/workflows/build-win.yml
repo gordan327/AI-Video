@@ -43,30 +43,23 @@ jobs:
           $env:PYTHONUTF8 = "1"
           $env:PYTHONPATH = "src"
           $FFMPEG_PATH = (Get-Command ffmpeg.exe).Source
-          Write-Host "FFmpeg Location: $FFMPEG_PATH"
-
-          $ICON_ARG = ""
-          if (Test-Path "assets/icon.ico") {
-              $ICON_ARG = "--windows-icon-from-ico=assets/icon.ico"
-          }
-
-          # 使用 --windows-console-mode=force 方便除錯
-          # 加入 --nofollow-import-to 強制排除數學運算庫
+          
+          # 使用 --enable-plugin=numpy 來解決與 opencv/onnx 的相依編譯瓶頸
+          # 加入 --include-module=cv2 --include-module=onnxruntime 明確指定，避開掃描
           python -m nuitka `
             --standalone `
             --assume-yes-for-downloads `
             --jobs=1 `
             --windows-console-mode=force `
             --enable-plugin=pyside6 `
+            --enable-plugin=numpy `
             --include-package=ai_video `
             --include-package=ultralytics `
-            --include-package=cv2 `
-            --include-package=onnxruntime `
+            --include-module=cv2 `
+            --include-module=onnxruntime `
             --include-data-dir=src/ai_video/config=ai_video/config `
             --include-data-files="$FFMPEG_PATH=bin/ffmpeg.exe" `
             --nofollow-import-to=sympy `
-            --nofollow-import-to=numpy `
-            $ICON_ARG `
             --output-dir=dist `
             src/ai_video/gui/app.py
 
