@@ -32,7 +32,7 @@ jobs:
 
       - name: Install Lightweight Dependencies & Local Project
         run: |
-          # 安裝依賴後強制移除會導致編譯卡死的 sympy
+          # 安裝輕量化依賴，並強制移除會癱瘓編譯的 sympy 與過重套件
           python -m pip install onnxruntime opencv-python PySide6 scipy pyyaml ultralytics
           python -m pip uninstall -y sympy
           python -m pip install -e .
@@ -43,9 +43,14 @@ jobs:
           $env:PYTHONUTF8 = "1"
           $env:PYTHONPATH = "src"
           $FFMPEG_PATH = (Get-Command ffmpeg.exe).Source
-          
-          # 使用 --enable-plugin=numpy 來解決與 opencv/onnx 的相依編譯瓶頸
-          # 加入 --include-module=cv2 --include-module=onnxruntime 明確指定，避開掃描
+          Write-Host "FFmpeg Location: $FFMPEG_PATH"
+
+          $ICON_ARG = ""
+          if (Test-Path "assets/icon.ico") {
+              $ICON_ARG = "--windows-icon-from-ico=assets/icon.ico"
+          }
+
+          # 加入 --nofollow-import-to=torch 徹底阻絕 ultralytics 把 PyTorch 大山拉進來
           python -m nuitka `
             --standalone `
             --assume-yes-for-downloads `
@@ -60,6 +65,9 @@ jobs:
             --include-data-dir=src/ai_video/config=ai_video/config `
             --include-data-files="$FFMPEG_PATH=bin/ffmpeg.exe" `
             --nofollow-import-to=sympy `
+            --nofollow-import-to=torch `
+            --nofollow-import-to=torchvision `
+            $ICON_ARG `
             --output-dir=dist `
             src/ai_video/gui/app.py
 
