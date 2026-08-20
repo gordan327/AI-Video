@@ -74,6 +74,9 @@ jobs:
       - name: Create Inno Setup Script & Build Windows Installer (.exe)
         shell: powershell
         run: |
+          # 確保目標安裝資料夾存在
+          New-Item -ItemType Directory -Force -Path "dist_installer"
+
           $issContent = @"
           [Setup]
           AppName=AI-Video
@@ -100,8 +103,11 @@ jobs:
           [Run]
           Filename: "{app}\app.exe"; Description: "{cm:LaunchProgram,AI-Video}"; Flags: nowait postinstall skipifsilent
           "@
-          Set-Content -Path "installer.iss" -Value $issContent
-          ISCC.exe installer.iss
+          
+          Set-Content -Path "installer.iss" -Value $issContent -Encoding UTF8
+          
+          # 執行 Inno Setup 編譯器
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
 
       - name: Upload Windows Installer (.exe)
         uses: actions/upload-artifact@v4
