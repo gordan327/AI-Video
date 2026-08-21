@@ -63,7 +63,9 @@ jobs:
             --include-module=cv2 `
             --include-module=onnxruntime `
             --include-data-dir=src/ai_video/config=ai_video/config `
+            --include-data-dir=src/ai_video/ui=ai_video/ui `
             --include-data-files="$FFMPEG_PATH=bin/ffmpeg.exe" `
+            --include-data-files="$FFMPEG_PATH=ffmpeg.exe" `
             --nofollow-import-to=sympy `
             --nofollow-import-to=torch `
             --nofollow-import-to=torchvision `
