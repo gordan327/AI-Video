@@ -50,7 +50,6 @@ jobs:
               $ICON_ARG = "--windows-icon-from-ico=assets/icon.ico"
           }
 
-          # 加入 --nofollow-import-to=torch 徹底阻絕 ultralytics 把 PyTorch 大山拉進來
           python -m nuitka `
             --standalone `
             --assume-yes-for-downloads `
@@ -60,6 +59,7 @@ jobs:
             --enable-plugin=numpy `
             --include-package=ai_video `
             --include-package=ultralytics `
+            --include-package=scipy `
             --include-module=cv2 `
             --include-module=onnxruntime `
             --include-data-dir=src/ai_video/config=ai_video/config `
