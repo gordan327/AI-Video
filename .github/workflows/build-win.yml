@@ -32,7 +32,6 @@ jobs:
 
       - name: Install Lightweight Dependencies & Local Project
         run: |
-          # 安裝輕量化依賴，並強制移除會癱瘓編譯的 sympy 與過重套件
           python -m pip install onnxruntime opencv-python PySide6 scipy pyyaml ultralytics
           python -m pip uninstall -y sympy
           python -m pip install -e .
@@ -50,6 +49,11 @@ jobs:
               $ICON_ARG = "--windows-icon-from-ico=assets/icon.ico"
           }
 
+          # 確保在編譯輸出目錄同時放置根目錄與 bin 目錄的 ffmpeg.exe，完美對應程式碼需求
+          New-Item -ItemType Directory -Force -Path "dist/app.dist/bin"
+          Copy-Item $FFMPEG_PATH -Destination "dist/app.dist/ffmpeg.exe"
+          Copy-Item $FFMPEG_PATH -Destination "dist/app.dist/bin/ffmpeg.exe"
+
           python -m nuitka `
             --standalone `
             --assume-yes-for-downloads `
@@ -64,8 +68,6 @@ jobs:
             --include-module=onnxruntime `
             --include-data-dir=src/ai_video/config=ai_video/config `
             --include-data-dir=src/ai_video/gui=ai_video/gui `
-            --include-data-files="$FFMPEG_PATH=bin/ffmpeg.exe" `
-            --include-data-files="$FFMPEG_PATH=ffmpeg.exe" `
             --nofollow-import-to=sympy `
             --nofollow-import-to=torch `
             --nofollow-import-to=torchvision `
@@ -81,7 +83,7 @@ jobs:
           $issContent = @"
           [Setup]
           AppName=AI-Video
-          AppVersion=1.1.0
+          AppVersion=1.1.1
           DefaultDirName={autopf}\AI-Video
           DefaultGroupName=AI-Video
           UninstallDisplayIcon={app}\app.exe
