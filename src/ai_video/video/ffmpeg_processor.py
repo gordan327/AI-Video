@@ -25,6 +25,7 @@ class FFmpegProcessor:
             Path(sys.executable).resolve().parent
         )
 
+<<<<<<< HEAD
         # 針對 macOS .app 結構或一般目錄可能放的位置進行擴充搜尋
         bundled_candidates = [
             application_directory / executable_name,
@@ -32,6 +33,11 @@ class FFmpegProcessor:
             # macOS .app 內部常見的 Resources 或 MacOS 上一層目錄
             application_directory.parent / executable_name,
             application_directory.parent / "Resources" / executable_name,
+=======
+        bundled_candidates = [
+            application_directory / executable_name,
+            application_directory / "bin" / executable_name,
+>>>>>>> a86532e07d351ffdb1926c15564035e80763a95d
         ]
 
         for candidate in bundled_candidates:
@@ -86,7 +92,11 @@ class FFmpegProcessor:
             raise RuntimeError(
                 "找不到 FFmpeg。\n\n"
                 "請確認 AI-Video 發行資料夾內包含 "
+<<<<<<< HEAD
                 "ffmpeg，或已將 FFmpeg 加入系統 PATH。"
+=======
+                "ffmpeg.exe，或已將 FFmpeg 加入系統 PATH。"
+>>>>>>> a86532e07d351ffdb1926c15564035e80763a95d
             ) from error
 
         except subprocess.CalledProcessError as error:

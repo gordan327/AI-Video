@@ -1,5 +1,8 @@
 import sys
+<<<<<<< HEAD
 import multiprocessing
+=======
+>>>>>>> a86532e07d351ffdb1926c15564035e80763a95d
 
 from PySide6.QtWidgets import (
     QApplication,
@@ -39,5 +42,8 @@ def main():
 
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     multiprocessing.freeze_support()
+=======
+>>>>>>> a86532e07d351ffdb1926c15564035e80763a95d
     sys.exit(main())

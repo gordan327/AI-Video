@@ -9,7 +9,10 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+<<<<<<< HEAD
     QListWidget,
+=======
+>>>>>>> a86532e07d351ffdb1926c15564035e80763a95d
     QMainWindow,
     QProgressBar,
     QPushButton,
@@ -42,7 +45,11 @@ class MainWindow(QMainWindow):
         )
 
         self.setWindowTitle(f"AI-Video {__version__}")
+<<<<<<< HEAD
         self.resize(900, 760)
+=======
+        self.resize(900, 650)
+>>>>>>> a86532e07d351ffdb1926c15564035e80763a95d
         self.setAcceptDrops(True)
 
         self.setup_ui()
@@ -81,13 +88,19 @@ class MainWindow(QMainWindow):
         )
 
         self.input_button = QPushButton("瀏覽")
+<<<<<<< HEAD
         self.add_queue_button = QPushButton("加入佇列")
         self.add_queue_button.setEnabled(False)
+=======
+>>>>>>> a86532e07d351ffdb1926c15564035e80763a95d
 
         input_row.addWidget(input_label)
         input_row.addWidget(self.input_edit)
         input_row.addWidget(self.input_button)
+<<<<<<< HEAD
         input_row.addWidget(self.add_queue_button)
+=======
+>>>>>>> a86532e07d351ffdb1926c15564035e80763a95d
 
         layout.addLayout(input_row)
 
@@ -110,6 +123,7 @@ class MainWindow(QMainWindow):
 
         layout.addLayout(output_row)
 
+<<<<<<< HEAD
         # 處理佇列
         queue_title = QLabel("處理佇列")
         queue_title.setStyleSheet(
@@ -127,6 +141,8 @@ class MainWindow(QMainWindow):
 
         layout.addWidget(self.queue_list)
 
+=======
+>>>>>>> a86532e07d351ffdb1926c15564035e80763a95d
         # 處理設定
         settings_title = QLabel("處理設定")
         settings_title.setStyleSheet(
@@ -393,7 +409,10 @@ class MainWindow(QMainWindow):
         file_menu.addAction(preferences_action)
         file_menu.addSeparator()
         file_menu.addAction(quit_action)
+<<<<<<< HEAD
 
+=======
+>>>>>>> a86532e07d351ffdb1926c15564035e80763a95d
         help_menu = self.menuBar().addMenu("說明")
 
         about_action = QAction(
@@ -414,13 +433,18 @@ class MainWindow(QMainWindow):
             self.restoreGeometry(geometry)
 
     def show_about_dialog(self):
+<<<<<<< HEAD
         """顯示 AI-Video 關於與版權授權資訊。"""
+=======
+        """顯示 AI-Video 關於資訊。"""
+>>>>>>> a86532e07d351ffdb1926c15564035e80763a95d
 
         QMessageBox.about(
             self,
             "關於 AI-Video",
             (
                 f"<b>AI-Video {__version__}</b><br><br>"
+<<<<<<< HEAD
                 "<b>開發者：</b>謝國清 (Xie Guoqing)<br>"
                 "<b>開發時間：</b>2026年9月<br><br>"
                 "<b>【版權宣告】</b><br>"
@@ -430,6 +454,11 @@ class MainWindow(QMainWindow):
                 "<b>【授權單位清單】</b><br>"
                 "1. [愛你一輩子守護團教育關懷協會]<br>"
                 "<i>（後續將由開發者更新並重新發布版本）</i>"
+=======
+                "Privacy-first AI Video Framework<br><br>"
+                "以人臉偵測、追蹤與影像處理技術，"
+                "保護影片中的個人隱私。"
+>>>>>>> a86532e07d351ffdb1926c15564035e80763a95d
             ),
         )
 
@@ -556,7 +585,11 @@ class MainWindow(QMainWindow):
         event.acceptProposedAction()
 
     def save_renderer_setting(self):
+<<<<<<< HEAD
         """修正並儲存 Renderer 設定。"""
+=======
+        """儲存 Renderer 設定。"""
+>>>>>>> a86532e07d351ffdb1926c15564035e80763a95d
 
         self.settings.setValue(
             "renderer",
