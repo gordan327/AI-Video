@@ -1,0 +1,117 @@
+name: Windows Build (PyInstaller)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'develop/*'
+    tags:
+      - 'v*'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Cache Pip Packages
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Upgrade pip & install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Install FFmpeg & Inno Setup via Chocolatey
+        run: |
+          choco install ffmpeg -y
+          choco install innosetup -y
+
+      - name: Prepare Resources (FFmpeg & Icon)
+        shell: powershell
+        run: |
+          if (!(Test-Path "resources")) { New-Item -ItemType Directory -Path "resources" }
+          
+          # 自動抓取 Chocolatey 安裝的 ffmpeg.exe 並複製到 resources/
+          $ffmpegPath = (Get-Command ffmpeg.exe).Source
+          Copy-Item $ffmpegPath -Destination "resources/ffmpeg.exe"
+          Write-Host "FFmpeg copied to resources/ffmpeg.exe"
+
+          # 檢查是否有 Windows 專屬圖標 (若無則跳過參數)
+          $global:iconArg = ""
+          if (Test-Path "resources/icon.ico") {
+              $global:iconArg = "--icon `"resources/icon.ico`""
+          } elseif (Test-Path "assets/icon.ico") {
+              $global:iconArg = "--icon `"assets/icon.ico`""
+          }
+          echo "ICON_ARG=$global:iconArg" >> $env:GITHUB_ENV
+
+      - name: Build Windows Executable with PyInstaller
+        shell: powershell
+        run: |
+          $env:PYTHONUTF8 = "1"
+          
+          # 執行 PyInstaller 打包 (--onedir 模式，完美對應您的 ffmpeg 路徑抓取邏輯)
+          pyinstaller --clean --noconfirm --onedir --windowed `
+            --name "AI-Video" `
+            ${{ env.ICON_ARG }} `
+            --add-data "src/ai_video/config;ai_video/config" `
+            --add-binary "resources/ffmpeg.exe;." `
+            --add-data "LICENSE;." `
+            --collect-all "insightface" `
+            --collect-all "onnxruntime" `
+            src/ai_video/gui/app.py
+
+      - name: Create Inno Setup Script & Build Windows Installer (.exe)
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path "dist_installer"
+
+          $issContent = @"
+          [Setup]
+          AppName=AI-Video
+          AppVersion=1.1.1
+          DefaultDirName={autopf}\AI-Video
+          DefaultGroupName=AI-Video
+          UninstallDisplayIcon={app}\AI-Video.exe
+          Compression=lzma2/ultra64
+          SolidCompression=yes
+          OutputDir=dist_installer
+          OutputBaseFilename=AI-Video-Windows-Installer
+
+          [Tasks]
+          Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
+
+          [Files]
+          Source: "dist\AI-Video\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+          [Icons]
+          Name: "{group}\AI-Video"; Filename: "{app}\AI-Video.exe"
+          Name: "{autodesktop}\AI-Video"; Filename: "{app}\AI-Video.exe"; Tasks: desktopicon
+
+          [Run]
+          Filename: "{app}\AI-Video.exe"; Description: "{cm:LaunchProgram,AI-Video}"; Flags: nowait postinstall skipifsilent
+          "@
+          
+          Set-Content -Path "installer.iss" -Value $issContent -Encoding UTF8
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+
+      - name: Upload Windows Installer (.exe)
+        uses: actions/upload-artifact@v4
+        with:
+          name: AI-Video-Windows-Installer
+          path: dist_installer/AI-Video-Windows-Installer.exe
