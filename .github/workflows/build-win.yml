@@ -69,6 +69,8 @@ jobs:
             --add-data "src/ai_video/config;ai_video/config" `
             --add-binary "resources/ffmpeg.exe;." `
             --add-data "LICENSE;." `
+            --collect-all "PySide6" `
+            --collect-all "shiboken6" `
             --collect-all "insightface" `
             --collect-all "onnxruntime" `
             src/ai_video/gui/app.py
