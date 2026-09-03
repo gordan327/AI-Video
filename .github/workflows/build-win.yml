@@ -66,9 +66,11 @@ jobs:
           pyinstaller --clean --noconfirm --onedir --windowed `
             --name "AI-Video" `
             ${{ env.ICON_ARG }} `
+            --paths "src" `
             --add-data "src/ai_video/config;ai_video/config" `
             --add-binary "resources/ffmpeg.exe;." `
             --add-data "LICENSE;." `
+            --collect-all "ai_video" `
             --collect-all "PySide6" `
             --collect-all "shiboken6" `
             --collect-all "insightface" `
