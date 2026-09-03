@@ -2,23 +2,17 @@ from datetime import datetime
 from pathlib import Path
 from time import perf_counter
 
-
 from PySide6.QtCore import QObject, QSettings, QThread, Signal, QTimer, Slot
-
-from PySide6.QtCore import QObject, QSettings, QThread, Signal, Slot
-
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from ai_video.config_manager import ConfigManager
 from ai_video.gui.preferences_dialog import PreferencesDialog
 from ai_video.gui.processing_configuration import ProcessingConfiguration
 from ai_video.gui.processing_job import ProcessingJob
-
 from ai_video.gui.processing_queue import (
     ProcessingQueue,
     ProcessingQueueStatus,
 )
-
 from ai_video.gui.processing_state_manager import ProcessingStateManager
 from ai_video.gui.video_path_manager import VideoPathManager
 from ai_video.gui.worker import Worker
@@ -57,10 +51,6 @@ class Controller(QObject):
         self.processing_started_at = None
         self.current_queue_item = None
         self.continue_queue_after_cleanup = False
-
-
-        self.processing_started_at = None
-
 
         self.connect_signals()
 
@@ -110,11 +100,9 @@ class Controller(QObject):
             self.select_output_video
         )
 
-
         self.window.add_queue_button.clicked.connect(
             self.add_video_to_queue
         )
-
 
         self.window.start_button.clicked.connect(
             self.start_processing
@@ -170,9 +158,7 @@ class Controller(QObject):
             f"已選擇輸入影片：{input_path}"
         )
 
-
         self.window.add_queue_button.setEnabled(True)        
-
 
         self.add_log(
             f"預設輸出影片：{output_path}"
@@ -220,7 +206,6 @@ class Controller(QObject):
 
         self.set_input_video(filename)
 
-
     def add_video_to_queue(self):
         """將目前選擇的影片加入處理佇列。"""
 
@@ -264,7 +249,6 @@ class Controller(QObject):
         self.add_log(
             f"已加入處理佇列：{input_path}"
         )
-
 
     def select_output_video(self):
         """指定輸出影片的位置。"""
@@ -389,7 +373,6 @@ class Controller(QObject):
             )
             return
 
-
         queue_item = self.processing_queue.next_waiting()
 
         if queue_item is not None:
@@ -413,20 +396,12 @@ class Controller(QObject):
         else:
             self.current_queue_item = None
 
-            input_text = (
-                self.window.input_edit.text().strip()
-            )
-            output_text = (
-                self.window.output_edit.text().strip()
-            )
-
         input_text = (
             self.window.input_edit.text().strip()
         )
         output_text = (
             self.window.output_edit.text().strip()
         )
-
 
         if not input_text:
             QMessageBox.warning(
@@ -710,7 +685,6 @@ class Controller(QObject):
             level="SUCCESS",
         )
 
-
         if self.current_queue_item is not None:
             self.processing_queue.mark_completed(
                 self.current_queue_item
@@ -731,19 +705,11 @@ class Controller(QObject):
 
             self.continue_queue_after_cleanup = True
 
-        else:
-            QMessageBox.information(
-                self.window,
-                "處理完成",
-                f"影片已輸出至：\n{output_path}",
-            )
-
         QMessageBox.information(
             self.window,
             "處理完成",
             f"影片已輸出至：\n{output_path}",
         )
-
 
     @Slot()
     def processing_cancelled(self):
@@ -764,7 +730,6 @@ class Controller(QObject):
             level="WARNING",
         )
 
-
         if self.current_queue_item is not None:
             self.processing_queue.mark_cancelled(
                 self.current_queue_item
@@ -784,7 +749,6 @@ class Controller(QObject):
             )
 
             self.continue_queue_after_cleanup = False
-
 
         QMessageBox.information(
             self.window,
@@ -811,7 +775,6 @@ class Controller(QObject):
             level="ERROR",
         )
 
-
         if self.current_queue_item is not None:
             self.processing_queue.mark_failed(
                 self.current_queue_item,
@@ -833,33 +796,10 @@ class Controller(QObject):
 
             self.continue_queue_after_cleanup = True
 
-        if self.current_queue_item is not None:
-            failed_name = (
-                self.current_queue_item.input_path.name
-            )
-
-            user_message = (
-                f"無法處理影片：{failed_name}\n\n"
-                "請確認檔案格式及內容是否正常。\n"
-                "詳細資訊已保留在執行紀錄中。"
-            )
-        else:
-            user_message = (
-                "影片處理失敗。\n\n"
-                "請確認檔案格式及內容是否正常。\n"
-                "詳細資訊已保留在執行紀錄中。"
-            )
-
-        QMessageBox.critical(
-            self.window,
-            "影片處理失敗",
-            user_message,
-
         QMessageBox.critical(
             self.window,
             "影片處理失敗",
             message,
-
         )
 
     @Slot()
@@ -876,7 +816,6 @@ class Controller(QObject):
         self.thread = None
 
         self.set_processing_state(False)
-
 
         should_continue = (
             self.continue_queue_after_cleanup
@@ -918,7 +857,6 @@ class Controller(QObject):
                     f"失敗：{failed_count} 支"
                 ),
             )
-
 
     def set_processing_state(self, processing):
         """切換處理期間的按鈕及輸入欄位狀態。"""
