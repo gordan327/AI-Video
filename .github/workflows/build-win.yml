@@ -35,6 +35,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install PySide6 shiboken6 insightface onnxruntime opencv-python scipy pyyaml pyinstaller
           pip install -r requirements.txt
+          pip install -e .
 
       - name: Install FFmpeg & Inno Setup via Chocolatey
         run: |
@@ -62,6 +63,7 @@ jobs:
         shell: powershell
         run: |
           $env:PYTHONUTF8 = "1"
+          $env:PYTHONPATH = "src"
           
           pyinstaller --clean --noconfirm --onedir --windowed `
             --name "AI-Video" `
