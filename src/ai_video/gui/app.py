@@ -1,4 +1,5 @@
 import sys
+import os
 import multiprocessing
 
 from PySide6.QtWidgets import (
@@ -15,6 +16,12 @@ from ai_video.gui.main_window import MainWindow
 
 def main():
     """啟動 AI-Video GUI。"""
+
+    # 防止打包成視窗版時 tqdm 因為沒有終端機而崩潰
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w")
+    if sys.stderr is None:
+        sys.stderr = open(os.devnull, "w")
 
     app = QApplication(sys.argv)
 
