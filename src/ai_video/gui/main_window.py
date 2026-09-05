@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QProgressBar,
     QPushButton,
+    QScrollArea,   # <--- 確保有匯入這個
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -49,11 +50,18 @@ class MainWindow(QMainWindow):
         self.setup_menu()
 
     def setup_ui(self):
-        """建立主視窗介面。"""
+        """建立主視窗介面（支援捲動，適應低解析度螢幕）。"""
 
+        # 1. 建立主內容 Widget
         central = QWidget()
-        self.setCentralWidget(central)
+        
+        # 2. 建立 ScrollArea 讓畫面在解析度不足時可以上下捲動
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setWidget(central)
+        self.setCentralWidget(scroll_area)
 
+        # 原本的佈局改貼到 central 裡面
         layout = QVBoxLayout(central)
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(16)
@@ -68,6 +76,8 @@ class MainWindow(QMainWindow):
             """
         )
         layout.addWidget(title)
+        
+        # ... (中段原本的元件保持不變，直到最下方的按鈕區)
 
         # 輸入影片
         input_row = QHBoxLayout()
