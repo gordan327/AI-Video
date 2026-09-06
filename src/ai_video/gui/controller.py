@@ -704,12 +704,13 @@ class Controller(QObject):
             )
 
             self.continue_queue_after_cleanup = True
-
-        QMessageBox.information(
-            self.window,
-            "處理完成",
-            f"影片已輸出至：\n{output_path}",
-        )
+        else:
+            # 只有在非佇列（單支影片）模式下，才彈出單獨完成提示
+            QMessageBox.information(
+                self.window,
+                "處理完成",
+                f"影片已輸出至：\n{output_path}",
+            )
 
     @Slot()
     def processing_cancelled(self):
@@ -871,7 +872,7 @@ class Controller(QObject):
         """接收背景工作狀態。"""
 
         important_messages = (
-            "正在開啟影片",
+            "正在開啟螢幕",
             "正在偵測及模糊",
             "正在停止處理",
             "正在合併原始音訊",
