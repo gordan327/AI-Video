@@ -77,7 +77,7 @@ jobs:
           $env:PYTHONUTF8 = "1"
           $env:PYTHONPATH = "src"
           
-          pyinstaller --clean --noconfirm --onedir --windowed `
+          pyinstaller --clean --noconfirm --onedir --windowed --noconsole `
             --name "AI-Video" `
             ${{ env.ICON_ARG }} `
             --paths "src" `
@@ -108,15 +108,12 @@ jobs:
           OutputDir=dist_installer
           OutputBaseFilename=AI-Video-Windows-Installer
 
-          [Tasks]
-          Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
-
           [Files]
           Source: "dist\AI-Video\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
           [Icons]
           Name: "{group}\AI-Video"; Filename: "{app}\AI-Video.exe"
-          Name: "{autodesktop}\AI-Video"; Filename: "{app}\AI-Video.exe"; Tasks: desktopicon
+          Name: "{autodesktop}\AI-Video"; Filename: "{app}\AI-Video.exe"
 
           [Run]
           Filename: "{app}\AI-Video.exe"; Description: "{cm:LaunchProgram,AI-Video}"; Flags: nowait postinstall skipifsilent
