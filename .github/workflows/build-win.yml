@@ -113,8 +113,7 @@ jobs:
 
           [Icons]
           Name: "{group}\AI-Video"; Filename: "{app}\AI-Video.exe"
-          Name: "{autodesktop}\AI-Video"; Filename: "{app}\AI-Video.exe"
-
+          Name: "{commondesktop}\AI-Video"; Filename: "{app}\AI-Video.exe"
           [Run]
           Filename: "{app}\AI-Video.exe"; Description: "{cm:LaunchProgram,AI-Video}"; Flags: nowait postinstall skipifsilent
           "@

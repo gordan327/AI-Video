@@ -75,11 +75,19 @@ class FFmpegProcessor:
         ]
 
         try:
+            # 針對 Windows 設定隱藏背景黑窗
+            creationflags = (
+                subprocess.CREATE_NO_WINDOW
+                if os.name == "nt"
+                else 0
+            )
+
             subprocess.run(
                 command,
                 check=True,
                 capture_output=True,
                 text=True,
+                creationflags=creationflags,
             )
 
         except FileNotFoundError as error:
