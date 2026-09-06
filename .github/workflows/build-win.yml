@@ -37,20 +37,32 @@ jobs:
           pip install -r requirements.txt
           pip install -e .
 
-      - name: Install FFmpeg & Inno Setup via Chocolatey
-        run: |
-          choco install ffmpeg -y
-          choco install innosetup -y
-
-      - name: Prepare Resources (FFmpeg & Icon)
+      - name: Download and Extract Official FFmpeg
         shell: powershell
         run: |
-          if (!(Test-Path "resources")) { New-Item -ItemType Directory -Path "resources" }
+          New-Item -ItemType Directory -Force -Path "resources"
+          $ffmpegUrl = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
+          Write-Host "Downloading FFmpeg from $ffmpegUrl..."
+          Invoke-WebRequest -Uri $ffmpegUrl -OutFile "ffmpeg.zip"
           
-          $ffmpegPath = (Get-Command ffmpeg.exe).Source
-          Copy-Item $ffmpegPath -Destination "resources/ffmpeg.exe"
-          Write-Host "FFmpeg copied to resources/ffmpeg.exe"
+          Write-Host "Extracting FFmpeg..."
+          Expand-Archive -Path "ffmpeg.zip" -DestinationPath "ffmpeg_extracted"
+          
+          $ffmpegExe = Get-ChildItem -Path "ffmpeg_extracted" -Filter "ffmpeg.exe" -Recurse | Select-Object -First 1
+          if ($ffmpegExe) {
+              Copy-Item $ffmpegExe.FullName -Destination "resources/ffmpeg.exe"
+              Write-Host "Successfully copied ffmpeg.exe to resources/ffmpeg.exe"
+          } else {
+              throw "ffmpeg.exe not found in downloaded archive!"
+          }
 
+      - name: Install Inno Setup via Chocolatey
+        run: |
+          choco install innosetup -y
+
+      - name: Prepare Icon Resource
+        shell: powershell
+        run: |
           $global:iconArg = ""
           if (Test-Path "resources/icon.ico") {
               $global:iconArg = "--icon `"resources/icon.ico`""
