@@ -16,26 +16,35 @@ from ai_video.gui.main_window import MainWindow
 
 
 def create_desktop_shortcut():
-    """確保 Windows 使用者桌面上擁有捷徑（自動補救機制）。"""
+    """確保 Windows 使用者桌面上擁有捷徑（透過內建 PowerShell 建立）。"""
     if os.name != "nt":
         return
     try:
-        import winshell
-        from win32com.client import Dispatch
+        import subprocess
         
-        desktop = Path(winshell.desktop())
+        # 取得目前執行的 .exe 路徑
+        target = Path(sys.executable).resolve()
+        
+        # 取得桌面路徑
+        desktop = Path(os.path.join(os.environ["USERPROFILE"], "Desktop"))
         shortcut_path = desktop / "AI-Video.lnk"
         
         if not shortcut_path.exists():
-            target = Path(sys.executable).resolve()
-            shell = Dispatch('WScript.Shell')
-            shortcut = shell.CreateShortcut(str(shortcut_path))
-            shortcut.TargetPath = str(target)
-            shortcut.WorkingDirectory = str(target.parent)
-            shortcut.IconLocation = str(target)
-            shortcut.Save()
+            # 使用 PowerShell 建立捷徑，完全不需要額外安裝套件
+            ps_script = f"""
+            $WshShell = New-Object -ComObject WScript.Shell
+            $Shortcut = $WshShell.CreateShortcut("{shortcut_path}")
+            $Shortcut.TargetPath = "{target}"
+            $Shortcut.WorkingDirectory = "{target.parent}"
+            $Shortcut.IconLocation = "{target}"
+            $Shortcut.Save()
+            """
+            subprocess.run(
+                ["powershell", "-Command", ps_script],
+                capture_output=True,
+                creationflags=subprocess.CREATE_NO_WINDOW
+            )
     except Exception:
-        # 如果缺少 win32com 或 winshell 庫則靜默略過，不影響主程式運作
         pass
 
 
