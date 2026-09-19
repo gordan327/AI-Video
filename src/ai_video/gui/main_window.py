@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QProgressBar,
     QPushButton,
-    QScrollArea,   # <--- 確保有匯入這個
+    QScrollArea,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -27,12 +27,16 @@ class MainWindow(QMainWindow):
     open_video_requested = Signal()
     preferences_requested = Signal()
 
+    # 同時支援影片與圖片格式
     SUPPORTED_VIDEO_SUFFIXES = {
         ".mp4",
         ".mov",
         ".avi",
         ".mkv",
         ".m4v",
+        ".jpg",
+        ".jpeg",
+        ".png",
     }
 
     def __init__(self):
@@ -67,7 +71,7 @@ class MainWindow(QMainWindow):
         layout.setSpacing(16)
 
         title = QLabel(
-            "AI-Video 影片隱私保護處理"
+            "AI-Video 影音隱私保護處理"
         )
         title.setStyleSheet(
             """
@@ -76,18 +80,16 @@ class MainWindow(QMainWindow):
             """
         )
         layout.addWidget(title)
-        
-        # ... (中段原本的元件保持不變，直到最下方的按鈕區)
 
-        # 輸入影片
+        # 輸入檔案（支援影片或照片）
         input_row = QHBoxLayout()
 
-        input_label = QLabel("輸入影片")
+        input_label = QLabel("輸入檔案")
         input_label.setFixedWidth(80)
 
         self.input_edit = QLineEdit()
         self.input_edit.setPlaceholderText(
-            "請選擇影片，或直接拖曳影片到視窗"
+            "請選擇影片或照片，或直接拖曳檔案到視窗"
         )
 
         self.input_button = QPushButton("瀏覽")
@@ -101,15 +103,15 @@ class MainWindow(QMainWindow):
 
         layout.addLayout(input_row)
 
-        # 輸出影片
+        # 輸出檔案
         output_row = QHBoxLayout()
 
-        output_label = QLabel("輸出影片")
+        output_label = QLabel("輸出檔案")
         output_label.setFixedWidth(80)
 
         self.output_edit = QLineEdit()
         self.output_edit.setPlaceholderText(
-            "請指定輸出影片的位置"
+            "請指定輸出檔案的位置"
         )
 
         self.output_button = QPushButton("瀏覽")
@@ -334,7 +336,7 @@ class MainWindow(QMainWindow):
         self.log_edit = QTextEdit()
         self.log_edit.setReadOnly(True)
         self.log_edit.setPlaceholderText(
-            "影片處理訊息會顯示在這裡"
+            "處理訊息會顯示在這裡"
         )
         self.log_edit.setMinimumHeight(110)
         self.log_edit.setMaximumHeight(160)
@@ -372,7 +374,7 @@ class MainWindow(QMainWindow):
         file_menu = self.menuBar().addMenu("檔案")
 
         open_action = QAction(
-            "開啟影片…",
+            "開啟檔案…",
             self,
         )
         open_action.setShortcut("Ctrl+O")
@@ -511,7 +513,7 @@ class MainWindow(QMainWindow):
         )
 
     def dragEnterEvent(self, event):
-        """判斷拖入的檔案是否為支援的影片。"""
+        """判斷拖入的檔案是否為支援的媒體（影片或圖片）。"""
 
         mime_data = event.mimeData()
 
@@ -539,7 +541,7 @@ class MainWindow(QMainWindow):
             event.ignore()
 
     def dropEvent(self, event):
-        """處理放入視窗的影片檔案。"""
+        """處理放入視窗的媒體檔案。"""
 
         urls = event.mimeData().urls()
 
@@ -566,7 +568,7 @@ class MainWindow(QMainWindow):
         event.acceptProposedAction()
 
     def save_renderer_setting(self):
-        """修正並儲存 Renderer 設定。"""
+        """儲存 Renderer 設定。"""
 
         self.settings.setValue(
             "renderer",

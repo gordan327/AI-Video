@@ -16,19 +16,23 @@ from ai_video.gui.processing_queue import (
 from ai_video.gui.processing_state_manager import ProcessingStateManager
 from ai_video.gui.video_path_manager import VideoPathManager
 from ai_video.gui.worker import Worker
+from ai_video.image.image_processor import ImageProcessor
 from ai_video.logger import Logger
 
 
 class Controller(QObject):
-    """處理 GUI 操作與影片處理流程。"""
+    """處理 GUI 操作與影音隱私處理流程。"""
 
     log_received = Signal(str)
 
-    VIDEO_FILTER = (
+    MEDIA_FILTER = (
+        "所有支援的媒體 (*.mp4 *.mov *.avi *.mkv *.m4v *.jpg *.jpeg *.png);;"
         "影片檔案 (*.mp4 *.mov *.avi *.mkv *.m4v);;"
-        "MP4 影片 (*.mp4);;"
+        "圖片檔案 (*.jpg *.jpeg *.png);;"
         "所有檔案 (*)"
     )
+
+    IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png"}
 
     SESSION_SEPARATOR = "=" * 50
     SESSION_DETAIL_SEPARATOR = "-" * 50
@@ -93,15 +97,15 @@ class Controller(QObject):
         """連接畫面元件與控制函式。"""
 
         self.window.input_button.clicked.connect(
-            self.select_input_video
+            self.select_input_file
         )
 
         self.window.output_button.clicked.connect(
-            self.select_output_video
+            self.select_output_file
         )
 
         self.window.add_queue_button.clicked.connect(
-            self.add_video_to_queue
+            self.add_file_to_queue
         )
 
         self.window.start_button.clicked.connect(
@@ -113,19 +117,19 @@ class Controller(QObject):
         )
 
         self.window.video_dropped.connect(
-            self.handle_video_dropped
+            self.handle_file_dropped
         )
 
         self.window.open_video_requested.connect(
-            self.select_input_video
+            self.select_input_file
         )
 
         self.window.preferences_requested.connect(
             self.show_preferences
         )
 
-    def set_input_video(self, filename: str):
-        """設定輸入影片及預設輸出路徑。"""
+    def set_input_file(self, filename: str):
+        """設定輸入檔案及預設輸出路徑。"""
 
         input_path = Path(filename)
 
@@ -138,62 +142,66 @@ class Controller(QObject):
             str(input_path.parent),
         )
 
-        output_path = (
-            VideoPathManager
-            .build_default_output_path(
-                input_path,
-                output_directory,
+        # 根據是否為圖片調整預設輸出檔名
+        if input_path.suffix.lower() in self.IMAGE_SUFFIXES:
+            output_path = Path(output_directory) / f"{input_path.stem}_blurred{input_path.suffix}"
+        else:
+            output_path = (
+                VideoPathManager
+                .build_default_output_path(
+                    input_path,
+                    output_directory,
+                )
             )
-        )
 
         self.window.output_edit.setText(
             str(output_path)
         )
 
         self.window.status_label.setText(
-            "已選擇輸入影片"
+            "已選擇輸入檔案"
         )
 
         self.add_log(
-            f"已選擇輸入影片：{input_path}"
+            f"已選擇輸入檔案：{input_path}"
         )
 
         self.window.add_queue_button.setEnabled(True)        
 
         self.add_log(
-            f"預設輸出影片：{output_path}"
+            f"預設輸出檔案：{output_path}"
         )
 
     @Slot(str)
-    def handle_video_dropped(self, filename: str):
-        """接收拖放進視窗的影片。"""
+    def handle_file_dropped(self, filename: str):
+        """接收拖放進視窗的檔案。"""
 
         if self.thread is not None:
             QMessageBox.information(
                 self.window,
-                "影片正在處理",
-                "請等待目前的影片處理完成後，"
-                "再拖入另一支影片。",
+                "正在處理中",
+                "請等待目前的處理工作完成後，"
+                "再拖入其他檔案。",
             )
             return
 
-        self.set_input_video(filename)
+        self.set_input_file(filename)
 
         self.add_log(
-            "影片已透過拖放方式加入"
+            "檔案已透過拖放方式加入"
         )
 
-    def select_input_video(self):
-        """選擇輸入影片。"""
+    def select_input_file(self):
+        """選擇輸入檔案（支援影片與照片）。"""
 
         filename, _ = QFileDialog.getOpenFileName(
             self.window,
-            "選擇輸入影片",
+            "選擇輸入檔案",
             self.settings.value(
                 "paths/input_directory",
                 "",
             ),
-            self.VIDEO_FILTER,
+            self.MEDIA_FILTER,
         )
 
         if not filename:
@@ -204,10 +212,10 @@ class Controller(QObject):
             str(Path(filename).parent),
         )
 
-        self.set_input_video(filename)
+        self.set_input_file(filename)
 
-    def add_video_to_queue(self):
-        """將目前選擇的影片加入處理佇列。"""
+    def add_file_to_queue(self):
+        """將目前選擇的檔案加入處理佇列。"""
 
         input_text = self.window.input_edit.text().strip()
         output_text = self.window.output_edit.text().strip()
@@ -216,7 +224,7 @@ class Controller(QObject):
             QMessageBox.warning(
                 self.window,
                 "無法加入佇列",
-                "請先選擇輸入影片並指定輸出位置。",
+                "請先選擇輸入檔案並指定輸出位置。",
             )
             return
 
@@ -231,8 +239,8 @@ class Controller(QObject):
         if item is None:
             QMessageBox.information(
                 self.window,
-                "影片已在佇列中",
-                "這支影片已經加入處理佇列。",
+                "檔案已在佇列中",
+                "這個檔案已經加入處理佇列。",
             )
             return
 
@@ -243,15 +251,15 @@ class Controller(QObject):
         self.window.add_queue_button.setEnabled(False)
 
         self.window.status_label.setText(
-            "影片已加入處理佇列"
+            "檔案已加入處理佇列"
         )
 
         self.add_log(
             f"已加入處理佇列：{input_path}"
         )
 
-    def select_output_video(self):
-        """指定輸出影片的位置。"""
+    def select_output_file(self):
+        """指定輸出檔案的位置。"""
 
         current_output = (
             self.window.output_edit.text().strip()
@@ -262,22 +270,21 @@ class Controller(QObject):
             "",
         )
 
-        output_name = (
-            Path(current_output).name
-            if current_output
-            else "output.mp4"
-        )
+        input_text = self.window.input_edit.text().strip()
+        input_path = Path(input_text) if input_text else None
+
+        default_name = input_path.name if input_path else "output.mp4"
 
         initial_output = str(
             Path(output_directory)
-            / output_name
+            / default_name
         )
 
         filename, _ = QFileDialog.getSaveFileName(
             self.window,
-            "指定輸出影片",
+            "指定輸出檔案",
             initial_output,
-            "MP4 影片 (*.mp4);;所有檔案 (*)",
+            "所有支援格式 (*.mp4 *.jpg *.png);;所有檔案 (*)",
             options=QFileDialog.Option.DontUseNativeDialog,
         )
 
@@ -289,22 +296,18 @@ class Controller(QObject):
             str(Path(filename).parent),
         )
 
-        output_path = (
-            VideoPathManager.build_output_path(
-                filename
-            )
-        )
+        output_path = Path(filename)
 
         self.window.output_edit.setText(
             str(output_path)
         )
 
         self.window.status_label.setText(
-            "已指定輸出影片"
+            "已指定輸出檔案"
         )
 
         self.add_log(
-            f"已指定輸出影片：{output_path}"
+            f"已指定輸出檔案：{output_path}"
         )
 
     def show_preferences(self):
@@ -363,13 +366,13 @@ class Controller(QObject):
         )
 
     def start_processing(self):
-        """檢查設定並啟動背景影片處理。"""
+        """檢查設定並啟動處理（自動識別圖片或影片）。"""
 
         if self.thread is not None:
             QMessageBox.information(
                 self.window,
-                "影片正在處理",
-                "目前已有一項影片處理工作正在執行。",
+                "處理中",
+                "目前已有一項處理工作正在執行。",
             )
             return
 
@@ -406,8 +409,8 @@ class Controller(QObject):
         if not input_text:
             QMessageBox.warning(
                 self.window,
-                "缺少輸入影片",
-                "請先選擇要處理的影片。",
+                "缺少輸入檔案",
+                "請先選擇要處理的檔案。",
             )
             return
 
@@ -416,8 +419,8 @@ class Controller(QObject):
         if not input_path.is_file():
             QMessageBox.warning(
                 self.window,
-                "找不到輸入影片",
-                f"找不到指定的影片：\n{input_path}",
+                "找不到輸入檔案",
+                f"找不到指定的檔案：\n{input_path}",
             )
             return
 
@@ -425,7 +428,7 @@ class Controller(QObject):
             QMessageBox.warning(
                 self.window,
                 "缺少輸出位置",
-                "請指定輸出影片的位置。",
+                "請指定輸出檔案的位置。",
             )
             return
 
@@ -438,7 +441,7 @@ class Controller(QObject):
             QMessageBox.warning(
                 self.window,
                 "輸出位置錯誤",
-                "輸入影片與輸出影片不能是同一個檔案。",
+                "輸入檔案與輸出檔案不能是同一個檔案。",
             )
             return
 
@@ -458,9 +461,6 @@ class Controller(QObject):
         detector = (
             self.window.detector_combo.currentData()
         )
-        tracker = (
-            self.window.tracker_combo.currentData()
-        )
         renderer = (
             self.window.renderer_combo.currentData()
         )
@@ -469,41 +469,95 @@ class Controller(QObject):
             QMessageBox.warning(
                 self.window,
                 "尚未支援",
-                "目前 GUI 版本只支援 SCRFD 偵測器。",
+                "目前版本只支援 SCRFD 偵測器。",
             )
             return
 
-        temp_output = (
-            VideoPathManager
-            .build_temp_output_path(
-                output_path
+        # 判斷是否為圖片處理
+        if input_path.suffix.lower() in self.IMAGE_SUFFIXES:
+            self.process_image_file(input_path, output_path, renderer)
+        else:
+            # 影片處理流程
+            tracker = (
+                self.window.tracker_combo.currentData()
             )
-        )
+            temp_output = (
+                VideoPathManager
+                .build_temp_output_path(
+                    output_path
+                )
+            )
 
-        job = ProcessingJob(
-            input_path=input_path,
-            output_path=output_path,
-            temp_output_path=temp_output,
-            detector=detector,
-            tracker=tracker,
-            renderer=renderer,
-        )
+            job = ProcessingJob(
+                input_path=input_path,
+                output_path=output_path,
+                temp_output_path=temp_output,
+                detector=detector,
+                tracker=tracker,
+                renderer=renderer,
+            )
 
-        config = self.config
+            config = self.config
+            ProcessingConfiguration.apply(config=config, job=job)
 
-        ProcessingConfiguration.apply(
-            config=config,
-            job=job,
-        )
+            self.processing_started_at = perf_counter()
+            self.log_processing_session_start(input_path=input_path, output_path=output_path)
+            self.start_worker(config)
 
-        self.processing_started_at = perf_counter()
+    def process_image_file(self, input_path: Path, output_path: Path, renderer_type: str):
+        """同步處理單張圖片。"""
+        self.window.status_label.setText("正在處理圖片人臉...")
+        self.window.progress.setValue(50)
+        
+        start_time = perf_counter()
+        self.add_log(f"開始處理圖片：{input_path}")
 
-        self.log_processing_session_start(
-            input_path=input_path,
-            output_path=output_path,
-        )
+        try:
+            processor = ImageProcessor(self.config)
+            face_count = processor.process(input_path, output_path, renderer_type)
+            
+            elapsed = perf_counter() - start_time
+            self.window.progress.setValue(100)
+            self.window.status_label.setText("圖片處理完成")
+            self.add_log(f"圖片處理成功！偵測到 {face_count} 張人臉，耗時 {elapsed:.2f} 秒", "SUCCESS")
 
-        self.start_worker(config)
+            if self.current_queue_item is not None:
+                self.processing_queue.mark_completed(self.current_queue_item)
+                queue_index = self.processing_queue.items.index(self.current_queue_item)
+                self.window.queue_list.item(queue_index).setText(f"已完成｜{input_path.name}")
+                self.continue_queue_after_cleanup = True
+            else:
+                QMessageBox.information(
+                    self.window,
+                    "處理完成",
+                    f"圖片已成功輸出至：\n{output_path}\n（共處理 {face_count} 張人臉）",
+                )
+
+        except Exception as error:
+            self.window.progress.setValue(0)
+            self.window.status_label.setText("圖片處理失敗")
+            error_msg = str(error)
+            self.add_log(f"圖片處理失敗：{error_msg}", "ERROR")
+
+            if self.current_queue_item is not None:
+                self.processing_queue.mark_failed(self.current_queue_item, error_msg)
+                queue_index = self.processing_queue.items.index(self.current_queue_item)
+                self.window.queue_list.item(queue_index).setText(f"處理失敗｜{input_path.name}")
+                self.continue_queue_after_cleanup = True
+
+            QMessageBox.critical(self.window, "處理失敗", f"圖片處理發生錯誤：\n{error_msg}")
+
+        finally:
+            self.current_queue_item = None
+            # 如果佇列還有其他待處理項目，自動繼續
+            if self.continue_queue_after_cleanup:
+                self.continue_queue_after_cleanup = False
+                has_waiting = any(
+                    item.status is ProcessingQueueStatus.WAITING
+                    for item in self.processing_queue.items
+                )
+                if has_waiting:
+                    QTimer.singleShot(100, self.start_processing)
 
     def log_processing_session_start(
         self,
@@ -705,7 +759,6 @@ class Controller(QObject):
 
             self.continue_queue_after_cleanup = True
         else:
-            # 只有在非佇列（單支影片）模式下，才彈出單獨完成提示
             QMessageBox.information(
                 self.window,
                 "處理完成",
@@ -853,9 +906,9 @@ class Controller(QObject):
                 self.window,
                 "佇列處理結束",
                 (
-                    "所有等待中的影片均已處理。\n\n"
-                    f"完成：{completed_count} 支\n"
-                    f"失敗：{failed_count} 支"
+                    "所有等待中的檔案均已處理。\n\n"
+                    f"完成：{completed_count} 支/張\n"
+                    f"失敗：{failed_count} 支/張"
                 ),
             )
 
@@ -872,7 +925,7 @@ class Controller(QObject):
         """接收背景工作狀態。"""
 
         important_messages = (
-            "正在開啟螢幕",
+            "正在開啟影片",
             "正在偵測及模糊",
             "正在停止處理",
             "正在合併原始音訊",
