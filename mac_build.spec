@@ -1,0 +1,83 @@
+# -*- mode: python ; coding: utf-8 -*-
+
+from PyInstaller.utils.hooks import collect_all
+
+block_cipher = None
+
+# 收集相關相依套件與資料
+ai_video_data = collect_all('ai_video')
+pyside6_data = collect_all('PySide6')
+shiboken6_data = collect_all('shiboken6')
+insightface_data = collect_all('insightface')
+onnxruntime_data = collect_all('onnxruntime')
+
+datas = ai_video_data[0] + pyside6_data[0] + shiboken6_data[0] + insightface_data[0] + onnxruntime_data[0]
+binaries = ai_video_data[1] + pyside6_data[1] + shiboken6_data[1] + insightface_data[1] + onnxruntime_data[1]
+hiddenimports = ai_video_data[2] + pyside6_data[2] + shiboken6_data[2] + insightface_data[2] + onnxruntime_data[2]
+
+# 嘗試尋找本機的 ffmpeg 順便打包進去 (Mac 可透過 Homebrew 安裝或放置於 resources)
+import shutil
+import os
+
+ffmpeg_path = shutil.which("ffmpeg")
+extra_binaries = []
+if ffmpeg_path:
+    extra_binaries.append((ffmpeg_path, '.'))
+
+a = Analysis(
+    ['src/ai_video/gui/app.py'],
+    pathex=['src'],
+    binaries=binaries + extra_binaries,
+    datas=datas + [('src/ai_video/config', 'ai_video/config'), ('LICENSE', '.')],
+    hiddenimports=hiddenimports,
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
+    noarchive=False,
+)
+
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    [],
+    exclude_binaries=True,
+    name='AI-Video',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    console=False,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='AI-Video',
+)
+
+app = BUNDLE(
+    coll,
+    name='AI-Video.app',
+    icon='resources/icon.ico' if os.path.exists('resources/icon.ico') else None,
+    bundle_identifier='com.xieguoqing.aivideo',
+    info_plist={
+        'NSHighResolutionCapable': 'True',
+        'LSEnvironment': {'PATH': '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin'},
+    },
+)
