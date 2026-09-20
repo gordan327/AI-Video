@@ -41,7 +41,7 @@ if ffmpeg_path:
     extra_binaries.append((ffmpeg_path, '.'))
 
 a = Analysis(
-    ['src/ai_video/gui/app.py'],
+    ['run.py'],
     pathex=['src'],
     binaries=binaries + extra_binaries,
     datas=datas,
