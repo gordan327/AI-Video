@@ -6,28 +6,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
-    steps:
-    - name: 讀取程式碼
-      uses: actions/checkout@v4
-    - name: 設定 Python 環境
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-    - name: 安裝相依套件
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller insightface opencv-python numpy PyQt5
-    - name: 執行 PyInstaller 打包 (Windows)
-      run: |
-        python -m PyInstaller --noconsole --clean --collect-all ai_video run.py
-    - name: 上傳 Windows 執行檔
-      uses: actions/upload-artifact@v4
-      with:
-        name: ai-video-windows-x64
-        path: dist/run/
-
   build-mac:
     runs-on: macos-latest
     steps:
@@ -43,7 +21,7 @@ jobs:
         pip install pyinstaller insightface opencv-python numpy PyQt5
     - name: 執行 PyInstaller 打包 (Mac)
       run: |
-        python -m PyInstaller --noconsole --clean --collect-all ai_video run.py
+        python -m PyInstaller --noconsole --clean --collect-all ai_video --hidden-import=binascii --hidden-import=zipfile run.py
     - name: 上傳 Mac 執行檔
       uses: actions/upload-artifact@v4
       with:
