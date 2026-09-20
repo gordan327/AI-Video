@@ -6,7 +6,7 @@ from PyInstaller.utils.hooks import collect_data_files
 
 block_cipher = None
 
-# 顯式宣告所有內部模組與依賴套件，徹底杜絕 PyInstaller 漏掉子模組
+# 顯式宣告所有內部模組與依賴套件
 hiddenimports = [
     'ai_video',
     'ai_video.detector',
@@ -29,11 +29,14 @@ hiddenimports = [
     'PySide6',
 ]
 
-# 收集必要的設定檔與授權檔案
+# 關鍵：直接將整個 ai_video 原始碼資料夾與設定檔強制打包進 App 內部
 datas = (
     collect_data_files('insightface') +
     collect_data_files('onnxruntime') +
-    [('src/ai_video/config', 'ai_video/config'), ('LICENSE', '.')]
+    [
+        ('src/ai_video', 'ai_video'),  # 強制打包整包原始碼，徹底解決找不到模組的問題
+        ('LICENSE', '.')
+    ]
 )
 
 ffmpeg_path = shutil.which("ffmpeg")
