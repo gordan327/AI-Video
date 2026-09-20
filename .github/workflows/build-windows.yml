@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # 或 windows-latest，這裡用 ubuntu 可以一次打包或分開
+    runs-on: ubuntu-latest
 
     steps:
     - name: 讀取程式碼
