@@ -1,23 +1,28 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-from PyInstaller.utils.hooks import collect_all
+import os
+import shutil
+from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
 block_cipher = None
 
-# 收集相關相依套件與資料
-ai_video_data = collect_all('ai_video')
-pyside6_data = collect_all('PySide6')
-shiboken6_data = collect_all('shiboken6')
-insightface_data = collect_all('insightface')
-onnxruntime_data = collect_all('onnxruntime')
+# 精準收集 ai_video 與必要 AI 套件的子模組，避免 1.5GB 肥大
+hiddenimports = (
+    collect_submodules('ai_video') +
+    collect_submodules('insightface') +
+    collect_submodules('onnxruntime') +
+    collect_submodules('cv2') +
+    ['scipy', 'yaml', 'PySide6']
+)
 
-datas = ai_video_data[0] + pyside6_data[0] + shiboken6_data[0] + insightface_data[0] + onnxruntime_data[0]
-binaries = ai_video_data[1] + pyside6_data[1] + shiboken6_data[1] + insightface_data[1] + onnxruntime_data[1]
-hiddenimports = ai_video_data[2] + pyside6_data[2] + shiboken6_data[2] + insightface_data[2] + onnxruntime_data[2]
+# 收集必要的資料檔
+datas = (
+    collect_data_files('insightface') +
+    collect_data_files('onnxruntime') +
+    [('src/ai_video/config', 'ai_video/config'), ('LICENSE', '.')]
+)
 
-import shutil
-import os
-
+# 尋找本機 ffmpeg
 ffmpeg_path = shutil.which("ffmpeg")
 extra_binaries = []
 if ffmpeg_path:
@@ -26,9 +31,9 @@ if ffmpeg_path:
 a = Analysis(
     ['src/ai_video/gui/app.py'],
     pathex=['src'],
-    binaries=binaries + extra_binaries,
-    datas=datas + [('src/ai_video/config', 'ai_video/config'), ('LICENSE', '.')],
-    hiddenimports=hiddenimports + ['ai_video.image', 'ai_video.image.image_processor'],
+    binaries=extra_binaries,
+    datas=datas,
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
