@@ -6,7 +6,7 @@ from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
 block_cipher = None
 
-# 精準收集 ai_video 與必要 AI 套件的子模組，避免 1.5GB 肥大
+# 完整收集所有子模組
 hiddenimports = (
     collect_submodules('ai_video') +
     collect_submodules('insightface') +
@@ -22,7 +22,6 @@ datas = (
     [('src/ai_video/config', 'ai_video/config'), ('LICENSE', '.')]
 )
 
-# 尋找本機 ffmpeg
 ffmpeg_path = shutil.which("ffmpeg")
 extra_binaries = []
 if ffmpeg_path:
