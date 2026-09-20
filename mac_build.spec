@@ -2,37 +2,38 @@
 
 import os
 import shutil
-from PyInstaller.utils.hooks import collect_all, collect_data_files
+from PyInstaller.utils.hooks import collect_data_files
 
 block_cipher = None
 
-# 使用 collect_all 一次性完整收錄 ai_video 與其他 AI 套件的所有子模組與二進位檔
-ai_video_data = collect_all('ai_video')
-insightface_data = collect_all('insightface')
-onnxruntime_data = collect_all('onnxruntime')
-cv2_data = collect_all('cv2')
+# 顯式宣告所有內部模組與依賴套件，徹底杜絕 PyInstaller 漏掉子模組
+hiddenimports = [
+    'ai_video',
+    'ai_video.detector',
+    'ai_video.detector.scrfd',
+    'ai_video.renderer',
+    'ai_video.renderer.blur',
+    'ai_video.renderer.pixelate',
+    'ai_video.renderer.solid',
+    'ai_video.image',
+    'ai_video.image.image_processor',
+    'ai_video.gui',
+    'ai_video.gui.app',
+    'ai_video.gui.controller',
+    'ai_video.gui.main_window',
+    'insightface',
+    'onnxruntime',
+    'cv2',
+    'scipy',
+    'yaml',
+    'PySide6',
+]
 
+# 收集必要的設定檔與授權檔案
 datas = (
-    ai_video_data[0] + 
-    insightface_data[0] + 
-    onnxruntime_data[0] + 
-    cv2_data[0] + 
+    collect_data_files('insightface') +
+    collect_data_files('onnxruntime') +
     [('src/ai_video/config', 'ai_video/config'), ('LICENSE', '.')]
-)
-
-binaries = (
-    ai_video_data[1] + 
-    insightface_data[1] + 
-    onnxruntime_data[1] + 
-    cv2_data[1]
-)
-
-hiddenimports = (
-    ai_video_data[2] + 
-    insightface_data[2] + 
-    onnxruntime_data[2] + 
-    cv2_data[2] + 
-    ['scipy', 'yaml', 'PySide6']
 )
 
 ffmpeg_path = shutil.which("ffmpeg")
@@ -43,7 +44,7 @@ if ffmpeg_path:
 a = Analysis(
     ['run.py'],
     pathex=['src'],
-    binaries=binaries + extra_binaries,
+    binaries=extra_binaries,
     datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],
