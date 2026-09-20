@@ -15,7 +15,6 @@ datas = ai_video_data[0] + pyside6_data[0] + shiboken6_data[0] + insightface_dat
 binaries = ai_video_data[1] + pyside6_data[1] + shiboken6_data[1] + insightface_data[1] + onnxruntime_data[1]
 hiddenimports = ai_video_data[2] + pyside6_data[2] + shiboken6_data[2] + insightface_data[2] + onnxruntime_data[2]
 
-# 嘗試尋找本機的 ffmpeg 順便打包進去 (Mac 可透過 Homebrew 安裝或放置於 resources)
 import shutil
 import os
 
@@ -29,7 +28,7 @@ a = Analysis(
     pathex=['src'],
     binaries=binaries + extra_binaries,
     datas=datas + [('src/ai_video/config', 'ai_video/config'), ('LICENSE', '.')],
-    hiddenimports=hiddenimports,
+    hiddenimports=hiddenimports + ['ai_video.image', 'ai_video.image.image_processor'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
