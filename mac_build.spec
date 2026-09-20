@@ -2,24 +2,37 @@
 
 import os
 import shutil
-from PyInstaller.utils.hooks import collect_submodules, collect_data_files
+from PyInstaller.utils.hooks import collect_all, collect_data_files
 
 block_cipher = None
 
-# 完整收集所有子模組
-hiddenimports = (
-    collect_submodules('ai_video') +
-    collect_submodules('insightface') +
-    collect_submodules('onnxruntime') +
-    collect_submodules('cv2') +
-    ['scipy', 'yaml', 'PySide6']
+# 使用 collect_all 一次性完整收錄 ai_video 與其他 AI 套件的所有子模組與二進位檔
+ai_video_data = collect_all('ai_video')
+insightface_data = collect_all('insightface')
+onnxruntime_data = collect_all('onnxruntime')
+cv2_data = collect_all('cv2')
+
+datas = (
+    ai_video_data[0] + 
+    insightface_data[0] + 
+    onnxruntime_data[0] + 
+    cv2_data[0] + 
+    [('src/ai_video/config', 'ai_video/config'), ('LICENSE', '.')]
 )
 
-# 收集必要的資料檔
-datas = (
-    collect_data_files('insightface') +
-    collect_data_files('onnxruntime') +
-    [('src/ai_video/config', 'ai_video/config'), ('LICENSE', '.')]
+binaries = (
+    ai_video_data[1] + 
+    insightface_data[1] + 
+    onnxruntime_data[1] + 
+    cv2_data[1]
+)
+
+hiddenimports = (
+    ai_video_data[2] + 
+    insightface_data[2] + 
+    onnxruntime_data[2] + 
+    cv2_data[2] + 
+    ['scipy', 'yaml', 'PySide6']
 )
 
 ffmpeg_path = shutil.which("ffmpeg")
@@ -30,7 +43,7 @@ if ffmpeg_path:
 a = Analysis(
     ['src/ai_video/gui/app.py'],
     pathex=['src'],
-    binaries=extra_binaries,
+    binaries=binaries + extra_binaries,
     datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],
