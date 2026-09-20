@@ -1,17 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_all
 
-datas = [('src/ai_video/config', 'ai_video/config'), ('LICENSE', '.')]
-binaries = [('resources/ffmpeg', '.')]
+datas = []
+binaries = []
 hiddenimports = []
-tmp_ret = collect_all('insightface')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
-tmp_ret = collect_all('onnxruntime')
+tmp_ret = collect_all('ai_video')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 
 a = Analysis(
-    ['src/ai_video/gui/app.py'],
+    ['run.py'],
     pathex=[],
     binaries=binaries,
     datas=datas,
@@ -30,7 +28,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='AI-Video',
+    name='run',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -41,7 +39,6 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['resources/icon.icns'],
 )
 coll = COLLECT(
     exe,
@@ -50,11 +47,11 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='AI-Video',
+    name='run',
 )
 app = BUNDLE(
     coll,
-    name='AI-Video.app',
-    icon='resources/icon.icns',
+    name='run.app',
+    icon=None,
     bundle_identifier=None,
 )

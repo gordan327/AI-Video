@@ -1,0 +1,1 @@
+from ai_video.detector.scrfd_face_detector import SCRFDFaceDetector as SCRFDDetector

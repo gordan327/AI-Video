@@ -4,7 +4,16 @@ from ai_video.detector.face_detector import FaceDetector
 class SCRFDFaceDetector(FaceDetector):
     """使用 SCRFD 偵測人臉並取得 embedding。"""
 
-    def __init__(self, model_manager, config):
+    def __init__(self, model_manager=None, config=None, model_name=None, **kwargs):
+        if model_manager is None:
+            try:
+                from insightface.app import FaceAnalysis
+                self.app = FaceAnalysis(name="antelopev2", root="~/.insightface")
+                self.app.prepare(ctx_id=0, det_size=(640, 640))
+            except Exception:
+                self.app = None
+        else:
+            self.app = getattr(model_manager, "face_analysis", None)
         self.model_manager = model_manager
         self.config = config
 
