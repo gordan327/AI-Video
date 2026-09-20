@@ -2,6 +2,12 @@ import sys
 import os
 import multiprocessing
 from pathlib import Path
+# 強制宣告引入，確保 PyInstaller 絕對不會漏掉這些子模組
+import ai_video.detector.scrfd
+import ai_video.renderer.blur
+import ai_video.renderer.pixelate
+import ai_video.renderer.solid
+import ai_video.image.image_processor
 
 from PySide6.QtWidgets import (
     QApplication,
