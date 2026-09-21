@@ -1,42 +1,52 @@
-name: Build Cross-Platform Executables
+name: Build Cross-Platform App
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
-  build-mac:
-    runs-on: macos-latest
+  build-windows:
+    runs-on: windows-latest
     steps:
-    - name: 讀取程式碼
-      uses: actions/checkout@v4
-    
-    - name: 設定 Python 環境
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-        
-    - name: 安裝相依套件
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller insightface opencv-python numpy PySide6 PyYAML
-        
-    - name: 執行 PyInstaller 打包 (Mac)
-      run: |
-        python -m PyInstaller \
-          --noconsole \
-          --clean \
-          --collect-all ai_video \
-          --collect-all PySide6 \
-          --collect-all insightface \
-          --hidden-import=binascii \
-          --hidden-import=zipfile \
-          --hidden-import=yaml \
-          run.py
-          
-    - name: 上傳 Mac 執行檔
-      uses: actions/upload-artifact@v4
-      with:
-        name: ai-video-macos-x64
-        path: dist/run/
+      - name: 檢出程式碼
+        uses: actions/checkout@v4
+
+      - name: 設定 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: 安裝相依套件與 PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pyinstaller
+
+      - name: 下載或準備 FFmpeg (Windows)
+        run: |
+          # 這裡可以透過指令下載 Windows 版的 ffmpeg.exe 放在專案根目錄
+          Invoke-WebRequest -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile "ffmpeg.zip"
+          Expand-Archive -Path "ffmpeg.zip" -DestinationPath "ffmpeg_extracted"
+          Move-Item "ffmpeg_extracted\/*/bin/ffmpeg.exe" "./ffmpeg.exe"
+
+      - name: 執行 PyInstaller 打包 Windows 程式
+        run: |
+          pyinstaller --noconsole --onedir --name="AI-Video-Windows" `
+            --hidden-import=insightface `
+            --hidden-import=onnxruntime `
+            --hidden-import=cv2 `
+            --add-data "ai_video/config;ai_video/config" `
+            --add-binary "ffmpeg.exe;." `
+            run.py
+
+      - name: 壓縮 Windows 發布資料夾
+        run: |
+          Compress-Archive -Path "dist\AI-Video-Windows" -DestinationPath "AI-Video-Windows.zip"
+
+      - name: 上傳 Windows 壓縮檔至 Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: AI-Video-Windows
+          path: AI-Video-Windows.zip
