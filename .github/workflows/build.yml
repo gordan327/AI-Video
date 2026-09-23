@@ -38,6 +38,9 @@ jobs:
             --hidden-import=insightface `
             --hidden-import=onnxruntime `
             --hidden-import=cv2 `
+            --collect-all torch `
+            --collect-all torchvision `
+            --collect-all insightface `
             --add-data "ai_video/config;ai_video/config" `
             --add-binary "ffmpeg.exe;." `
             run.py
