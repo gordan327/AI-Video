@@ -34,6 +34,7 @@ jobs:
       - name: 執行 PyInstaller 打包 Windows 程式
         run: |
           pyinstaller --noconsole --onedir --name="AI-Video-Windows" `
+            --hidden-import=numpy `
             --hidden-import=insightface `
             --hidden-import=onnxruntime `
             --hidden-import=cv2 `
