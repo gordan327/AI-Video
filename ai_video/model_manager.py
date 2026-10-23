@@ -50,14 +50,17 @@ class ModelManager:
 
     def _resolve_det_size(self):
         """取得實際使用的 SCRFD det_size。"""
+        # 加上預設值 800，確保找不到時不會回傳空值或設定物件
+        det_size = self.config.get("detector.det_size", 800)
 
-        det_size = self.config.get(
-            "detector.det_size"
-        )
-
-        if det_size == "auto":
-            # 第一版：auto 先固定使用 800。
-            # 後續可依影片解析度自動決定。
+        if det_size == "auto" or det_size is None:
             return 800
 
-        return int(det_size)
+        # 如果不小心拿到 ConfigManager 物件或其他型態，安全防護直接回傳 800
+        if not isinstance(det_size, (int, float, str)):
+            return 800
+
+        try:
+            return int(det_size)
+        except (TypeError, ValueError):
+            return 800
