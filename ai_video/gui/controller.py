@@ -529,21 +529,24 @@ class Controller(QObject):
                 self.continue_queue_after_cleanup = True
 
         except Exception as error:
-            # 印出詳細錯誤堆疊，精準對應行號
-            traceback.print_exc()
+            # 取得完整的錯誤堆疊字串
+            import traceback
+            error_trace = traceback.format_exc()
             
             self.window.progress.setValue(0)
             self.window.status_label.setText("圖片處理失敗")
-            error_msg = str(error)
-            self.add_log(f"圖片處理失敗：{error_msg}", "ERROR")
+            
+            # 將詳細錯誤直接記錄到執行紀錄視窗
+            error_msg = f"{error}\n{error_trace}"
+            self.add_log(f"圖片處理失敗詳細原因：\n{error_msg}", "ERROR")
 
             if self.current_queue_item is not None:
-                self.processing_queue.mark_failed(self.current_queue_item, error_msg)
+                self.processing_queue.mark_failed(self.current_queue_item, str(error))
                 queue_index = self.processing_queue.items.index(self.current_queue_item)
                 self.window.queue_list.item(queue_index).setText(f"處理失敗｜{input_path.name}")
                 self.continue_queue_after_cleanup = True
 
-            QMessageBox.critical(self.window, "處理失敗", f"圖片處理發生錯誤：\n{error_msg}")
+            QMessageBox.critical(self.window, "處理失敗", f"圖片處理發生錯誤：\n{error}")
 
         finally:
             self.current_queue_item = None

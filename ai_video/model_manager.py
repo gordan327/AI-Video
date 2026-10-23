@@ -45,7 +45,7 @@ class ModelManager:
 
     def _resolve_det_size(self):
         """取得實際使用的 SCRFD det_size。"""
-        # 加上預設值 800 與型態保護，防止抓不到時回傳 ConfigManager 物件導致崩潰
+        # 加上預設值 800 與型態保護，確保抓不到或拿到物件時不會崩潰
         det_size = self.config.get("detector.det_size", 800)
 
         if det_size == "auto" or det_size is None:
