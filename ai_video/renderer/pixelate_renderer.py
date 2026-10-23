@@ -8,11 +8,20 @@ class PixelateRenderer(BaseRenderer):
 
     def __init__(
         self,
-        pixel_size: int = 12,
+        pixel_size=12,
     ):
+        # 加上型態防護：如果傳入的不是數字或字串（例如不小心帶入 ConfigManager 物件），則安全預設為 12
+        if not isinstance(pixel_size, (int, float, str)):
+            pixel_size = 12
+
+        try:
+            parsed_size = int(pixel_size)
+        except (TypeError, ValueError):
+            parsed_size = 12
+
         self.pixel_size = max(
             2,
-            int(pixel_size),
+            parsed_size,
         )
 
     def render(
