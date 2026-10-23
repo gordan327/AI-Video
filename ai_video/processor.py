@@ -514,9 +514,7 @@ class VideoProcessor:
 
         if total_frames > 0:
             percentage = int(
-                frame_index
-                / total_frames
-                * 100
+                (frame_index / total_frames) * 100
             )
 
             remaining_frames = max(
