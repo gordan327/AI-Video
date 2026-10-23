@@ -1,6 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 from time import perf_counter
+import traceback
 
 from PySide6.QtCore import QObject, QSettings, QThread, Signal, QTimer, Slot
 from PySide6.QtWidgets import QFileDialog, QMessageBox
@@ -526,14 +527,11 @@ class Controller(QObject):
                 queue_index = self.processing_queue.items.index(self.current_queue_item)
                 self.window.queue_list.item(queue_index).setText(f"已完成｜{input_path.name}")
                 self.continue_queue_after_cleanup = True
-            else:
-                QMessageBox.information(
-                    self.window,
-                    "處理完成",
-                    f"圖片已成功輸出至：\n{output_path}\n（共處理 {face_count} 張人臉）",
-                )
 
         except Exception as error:
+            # 印出詳細錯誤堆疊，精準對應行號
+            traceback.print_exc()
+            
             self.window.progress.setValue(0)
             self.window.status_label.setText("圖片處理失敗")
             error_msg = str(error)
@@ -549,7 +547,6 @@ class Controller(QObject):
 
         finally:
             self.current_queue_item = None
-            # 如果佇列還有其他待處理項目，自動繼續
             if self.continue_queue_after_cleanup:
                 self.continue_queue_after_cleanup = False
                 has_waiting = any(
@@ -813,6 +810,7 @@ class Controller(QObject):
     @Slot(str)
     def processing_failed(self, message):
         """影片處理發生錯誤。"""
+        traceback.print_exc()
 
         self.window.progress.setValue(0)
         self.window.status_label.setText(
@@ -929,7 +927,7 @@ class Controller(QObject):
             "正在偵測及模糊",
             "正在停止處理",
             "正在合併原始音訊",
-            "影片處理完成",
+            "影片處理處理完成",
             "影片處理已停止",
         )
 
