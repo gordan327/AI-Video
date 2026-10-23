@@ -2,66 +2,75 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from ai_video.detector.scrfd import SCRFDDetector
-from ai_video.renderer.blur import BlurRenderer
-from ai_video.renderer.pixelate import PixelateRenderer
-from ai_video.renderer.solid import SolidRenderer
-from ai_video.logger import Logger
+from ai_video.config_manager import ConfigManager
+from ai_video.detector.scrfd_face_detector import SCRFDFaceDetector
+from ai_video.model_manager import ModelManager
 
 
 class ImageProcessor:
-    """處理單張照片的人臉偵測與隱私遮蔽。"""
+    """處理單張圖片的人臉偵測與多種隱私保護渲染。"""
 
-    def __init__(self, config):
-        self.config = config
-        
-        # 初始化偵測器
-        model_name = config.get("detector.model", "buffalo_sc")
-        det_size = config.get("detector.det_size", 640)
-        confidence = config.get("detector.confidence", 0.5)
-        provider = config.get("runtime.provider", "auto")
-
-        self.detector = SCRFDDetector(
-            model_name=model_name,
-            det_size=(det_size, det_size),
-            confidence=confidence,
-            provider=provider,
-        )
-
-        # 初始化渲染器
-        self.renderers = {
-            "blur": BlurRenderer(config),
-            "pixelate": PixelateRenderer(config),
-            "solid": SolidRenderer(config),
-        }
+    def __init__(self, config: ConfigManager = None):
+        self.config = config if config is not None else ConfigManager()
+        self.model_manager = ModelManager(self.config)
 
     def process(self, input_path: Path, output_path: Path, renderer_type: str) -> int:
-        """處理單張照片，回傳偵測到的人臉數。"""
-        Logger.info(f"正在讀取照片：{input_path}")
-        image = cv2.imread(str(input_path))
-        if image is None:
-            raise RuntimeError(f"無法讀取圖片檔案：{input_path}")
+        """處理圖片並回傳偵測到的人臉數。"""
+        print(f"[ImageProcessor] 開始讀取圖片: {input_path}")
+        
+        # 使用 np.fromfile 搭配 cv2.imdecode 支援中文與特殊字元路徑
+        img_bytes = np.fromfile(str(input_path), dtype=np.uint8)
+        img = cv2.imdecode(img_bytes, cv2.IMREAD_COLOR)
+        if img is None:
+            raise ValueError(f"無法讀取圖片檔案: {input_path}")
 
-        # 1. 偵測人臉
-        Logger.info("正在進行人臉偵測...")
-        faces = self.detector.detect(image)
-        face_count = len(faces)
-        Logger.info(f"偵測到 {face_count} 張人臉")
+        print("[ImageProcessor] 正在初始化偵測器...")
+        detector = SCRFDFaceDetector(model_manager=self.model_manager, config=self.config)
 
-        if face_count > 0:
-            # 2. 取得對應的渲染器並套用
-            renderer = self.renderers.get(renderer_type)
-            if renderer is None:
-                renderer = self.renderers["blur"]
+        print("[ImageProcessor] 正在進行人臉偵測...")
+        faces = detector.detect(img)
+        print(f"[ImageProcessor] 偵測完成，找到 {len(faces)} 張人臉")
 
-            Logger.info(f"正在套用處理方式：{renderer_type}")
-            renderer.render(image, faces)
+        if not renderer_type:
+            renderer_type = "blur"
 
-        # 3. 確保輸出資料夾存在並儲存
+        print(f"[ImageProcessor] 套用渲染模式: {renderer_type}")
+        output_img = img.copy()
+        h, w = img.shape[:2]
+
+        for face in faces:
+            x1, y1, x2, y2 = face.x1, face.y1, face.x2, face.y2
+            x1, y1, x2, y2 = max(0, int(x1)), max(0, int(y1)), min(w, int(x2)), min(h, int(y2))
+            
+            if x2 <= x1 or y2 <= y1:
+                continue
+
+            roi = output_img[y1:y2, x1:x2]
+
+            if renderer_type == "pixelate":
+                # 馬賽克處理
+                rh, rw = roi.shape[:2]
+                if rw > 0 and rh > 0:
+                    blocks = max(1, min(rw, rh) // 10)
+                    small = cv2.resize(roi, (blocks, blocks), interpolation=cv2.INTER_LINEAR)
+                    pixelated = cv2.resize(small, (rw, rh), interpolation=cv2.INTER_NEAREST)
+                    output_img[y1:y2, x1:x2] = pixelated
+            elif renderer_type == "solid":
+                # 純色遮蔽 (黑色)
+                output_img[y1:y2, x1:x2] = (0, 0, 0)
+            else:
+                # 預設高斯模糊
+                output_img[y1:y2, x1:x2] = cv2.GaussianBlur(roi, (99, 99), 30)
+
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        success = cv2.imwrite(str(output_path), image)
-        if not success:
-            raise RuntimeError(f"無法儲存處理後的圖片至：{output_path}")
+        
+        # 使用 cv2.imencode 搭配 tofile 支援中文儲存路徑
+        success, encoded_img = cv2.imencode(output_path.suffix, output_img)
+        if success:
+            encoded_img.tofile(str(output_path))
+        else:
+            raise ValueError(f"無法儲存圖片檔案: {output_path}")
 
-        Logger.success(f"照片處理完成，已輸出至：{output_path}")
-        return face_count
+        print(f"[ImageProcessor] 圖片已成功儲存至: {output_path}")
+
+        return len(faces)
